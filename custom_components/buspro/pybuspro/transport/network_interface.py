@@ -18,7 +18,7 @@ class NetworkInterface:
     def _udp_request_received(self, data, address):
         if self.callback is not None:
             telegram = self._th.build_telegram_from_udp_data(data, address)
-            self.callback(telegram)
+            if telegram: self.callback(telegram)
 
     async def _send_message(self, message):
         await self.udp_client.send_message(message)
