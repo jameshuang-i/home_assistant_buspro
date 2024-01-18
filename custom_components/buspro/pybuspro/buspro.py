@@ -3,13 +3,11 @@
 import asyncio
 import logging
 
-from .helpers.enums import *
+from .enums import *
 from .transport.network_interface import NetworkInterface
 
 
-# ip, port = gateway_address
-# subnet_id, device_id, channel = device_address
-
+logger = logging.getLogger("buspro.log")
 
 class StateUpdater:
     def __init__(self, buspro, sleep=10):
@@ -23,7 +21,7 @@ class StateUpdater:
 
     async def run(self):
         await asyncio.sleep(0)
-        self.buspro.logger.info("Starting StateUpdater with {} seconds interval".format(self.sleep))
+        logger.info("Starting StateUpdater with {} seconds interval".format(self.sleep))
 
         while True:
             await asyncio.sleep(self.sleep)
@@ -31,86 +29,78 @@ class StateUpdater:
 
 
 class Buspro:
-
-    def __init__(self, gateway_address_send_receive, loop_=None):
+    def __init__(self, gateway_address, local_address, loop_=None):
         self.loop = loop_ or asyncio.get_event_loop()
-        self.state_updater = None
-        self.started = False
-        self.network_interface = None
-        self.logger = logging.getLogger("buspro.log")
-        self.telegram_logger = logging.getLogger("buspro.telegram")
+        self._gateway_address = gateway_address
+        self._local_address = local_address
 
-        self.callback_all_messages = None
-        self._telegram_received_cbs = []
-
-        self.gateway_address_send_receive = gateway_address_send_receive
+        self._state_updater = None
+        self._started = False
+        self._net = None
+        self._all_received_telegram_callback = None
+        self._device_received_telegram_callbacks = []        
 
     def __del__(self):
-        if self.started:
+        if self._started:
             try:
                 task = self.loop.create_task(self.stop())
                 self.loop.run_until_complete(task)
             except RuntimeError as exp:
-                self.logger.warning("Could not close loop, reason: {}".format(exp))
+                logger.warning("Could not close loop, reason: {}".format(exp))
 
     # noinspection PyUnusedLocal
     async def start(self, state_updater=False):  # , daemon_mode=False):
-        self.network_interface = NetworkInterface(self, self.gateway_address_send_receive)
-        self.network_interface.register_callback(self._callback_all_messages)
-        await self.network_interface.start()
+        self._net = NetworkInterface(self._gateway_address, self._local_address, self._handle_received_telegram, self.loop)
+        await self._net.start()
 
         if state_updater:
-            self.state_updater = StateUpdater(self)
-            await self.state_updater.start()
+            self._state_updater = StateUpdater(self)
+            await self._state_updater.start()
 
         '''
         if daemon_mode:
             await self._loop_until_sigint()
         '''
-
-        self.started = True
-
-        # await asyncio.sleep(5)
-        # await self.network_interface.send_message(b'\0x01')
+        self._started = True
 
     async def stop(self):
-        await self._stop_network_interface()
-        self.started = False
+        if self._net:
+            await self._net.stop()
+            self._net = None
+        self._started = False
+    
+    async def send_telegram(self, telegram):
+        if self._net:
+            self._net.send_telegram(telegram)
+        else:
+            logger.error("Send telegram failed as buspro not connected!")
 
-    def _callback_all_messages(self, telegram):
-        self.telegram_logger.debug(telegram)
+    def _handle_received_telegram(self, telegram):
+        telegram_control = telegram.toControl()
 
-        if self.callback_all_messages is not None:
-            self.callback_all_messages(telegram)
+        if self._all_received_telegram_callback:
+            self._all_received_telegram_callback(telegram_control)
 
-        for telegram_received_cb in self._telegram_received_cbs:
+        for telegram_received_cb in self._device_received_telegram_callbacks:
             device_address = telegram_received_cb['device_address']
 
             # Sender callback kun for oppgitt kanal
-            if device_address == telegram.target_address or device_address == telegram.source_address:
-                if telegram.operate_code is not OperateCode.TIME_IF_FROM_LOGIC_OR_SECURITY:
+            if device_address == telegram_control.target_address or device_address == telegram_control.source_address:
+                if telegram_control.operate_code is not OperateCode.TIME_IF_FROM_LOGIC_OR_SECURITY:
                     postfix = telegram_received_cb['postfix']
-                    if postfix is not None:
-                        telegram_received_cb['callback'](telegram, postfix)
-                    else:
-                        telegram_received_cb['callback'](telegram)
-
-    async def _stop_network_interface(self):
-        if self.network_interface is not None:
-            await self.network_interface.stop()
-            self.network_interface = None
+                    telegram_received_cb['callback'](telegram_control, postfix)
 
     def register_telegram_received_all_messages_cb(self, telegram_received_cb):
-        self.callback_all_messages = telegram_received_cb
+        self._all_received_telegram_callback = telegram_received_cb
 
     def register_telegram_received_device_cb(self, telegram_received_cb, device_address, postfix=None):
-        self._telegram_received_cbs.append({
+        self._device_received_telegram_callbacks.append({
             'callback': telegram_received_cb,
             'device_address': device_address,
             'postfix': postfix})
 
     def unregister_telegram_received_device_cb(self, telegram_received_cb, device_address, postfix=None):
-        self._telegram_received_cbs.remove({
+        self._device_received_telegram_callbacks.remove({
             'callback': telegram_received_cb,
             'device_address': device_address,
             'postfix': postfix})

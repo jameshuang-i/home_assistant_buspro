@@ -1,12 +1,26 @@
 from enum import Enum
 
+class BaseEnum(Enum):
+    # 得到枚举值， 如果没有返回None
+    @classmethod
+    def value_of(cls, value):
+        # for enum_item in cls:
+        for member in cls._member_map_.values():
+            if member._value_ == value:
+                return member
+        return None
 
-class SuccessOrFailure(Enum):
+class SuccessOrFailure(BaseEnum):
     Success = b'\xF8'
     Failure = b'\xF5'
 
+class PresetMode(BaseEnum):
+    none = 1
+    home = 2
+    sleep = 3
+    away = 4
 
-class DeviceType(Enum):
+class DeviceType(BaseEnum):
     NotSet = b'\x00\x00'
     SB_DN_6B0_10v = b'\x00\x11'   # Rele varme
     SB_DN_SEC250K = b'\x0B\xE9'   # Sikkerhetsmodul
@@ -30,27 +44,27 @@ class DeviceType(Enum):
     # SB_DN_RS232N				    # RS232
 
 
-class OnOff(Enum):
+class OnOff(BaseEnum):
     OFF = 0
     ON = 255
 
 
-class SwitchStatusOnOff(Enum):
+class SwitchStatusOnOff(BaseEnum):
     OFF = 0
     ON = 1
 
 
-class OnOffStatus(Enum):
+class OnOffStatus(BaseEnum):
     OFF = 0
     ON = 1
 
 
-class TemperatureType(Enum):
+class TemperatureType(BaseEnum):
     Celsius = 0
     Fahrenheit = 1
 
 
-class TemperatureMode(Enum):
+class TemperatureMode(BaseEnum):
     Normal = 1
     Day = 2
     Night = 3
@@ -58,7 +72,7 @@ class TemperatureMode(Enum):
     Timer = 5
 
 
-class OperateCode(Enum):
+class OperateCode(BaseEnum):
     NotSet = b'\x00'
 
     SingleChannelControl = b'\x00\x31'

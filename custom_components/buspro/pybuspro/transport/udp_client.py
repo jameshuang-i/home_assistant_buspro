@@ -1,79 +1,66 @@
 import asyncio
 import socket
+import logging
 
+logger = logging.getLogger("buspro.udp_client")
+
+class UDPProtocol(asyncio.DatagramProtocol):
+    def __init__(self, data_received_callback=None):
+        self.transport = None
+        self._callback = data_received_callback
+
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def datagram_received(self, data, address):
+        if self._callback:
+            self._callback(data, address)
+
+    def error_received(self, exc):
+        logger.warning(f'Error received: {exc}')
+
+    def connection_lost(self, exc):
+        logger.info(f'closing transport {exc}')
 
 class UDPClient:
-
-    class UDPClientFactory(asyncio.DatagramProtocol):
-
-        def __init__(self, buspro, data_received_callback=None):
-            self.buspro = buspro
-            self.transport = None
-            self.data_received_callback = data_received_callback
-
-        def connection_made(self, transport):
-            self.transport = transport
-
-        def datagram_received(self, data, address):
-            if self.data_received_callback is not None:
-                self.data_received_callback(data, address)
-
-        def error_received(self, exc):
-            self.buspro.logger.warning('Error received: %s', exc)
-            pass
-
-        def connection_lost(self, exc):
-            self.buspro.logger.info('closing transport %s', exc)
-            pass
-
-    def __init__(self, buspro, gateway_address_send_receive, callback):
-        self.buspro = buspro
-        self._gateway_address_send, self._gateway_address_receive = gateway_address_send_receive
-        self.callback = callback
-        self.transport = None
-
-    # def register_callback(self, callback):
-    #     self.callback = callback
-
-    def _data_received_callback(self, data, address):
-        self.callback(data, address)
-
-    def _create_multicast_sock(self):
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.setblocking(False)
-            sock.bind(self._gateway_address_receive)
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
-            return sock
-        except Exception as ex:
-            self.buspro.logger.warning("Could not connect to {}: {}".format(self._gateway_address_receive, ex))
+    def __init__(self, gateway_address, local_address, data_received_callback, loop):
+        self._gateway_address = gateway_address
+        self._local_address = local_address
+        self._data_received_callback = data_received_callback
+        self._loop = loop or asyncio.get_event_loop()
+        self._transport = None
 
     async def _connect(self):
         try:
-            udp_client_factory = \
-                UDPClient.UDPClientFactory(self.buspro, data_received_callback=self._data_received_callback)
+            protol = UDPProtocol(self._data_received_callback)
+            # Create multicast socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.setblocking(False)
+            sock.bind(self._local_address)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
 
-            sock = self._create_multicast_sock()
             if sock is None:
-                self.buspro.logger.warning("Socket is None")
-                return
+                logger.error("Create multicast socket failed!")
+                return 
+            
+            (transport, _) = await self._loop.create_datagram_endpoint(lambda: protol, sock=sock)
 
-            (transport, _) = await self.buspro.loop.create_datagram_endpoint(lambda: udp_client_factory, sock=sock)
-
-            self.transport = transport
+            self._transport = transport
         except Exception as ex:
-            self.buspro.logger.warning("Could not create endpoint to {}: {}".format(self._gateway_address_receive, ex))
+            logger.error(f"Could not create UDP endpoint to {self._gateway_address}: {ex}")
 
     async def start(self):
         await self._connect()
 
     async def stop(self):
-        if self.transport is not None:
-            self.transport.close()
+        if self._transport:
+            self._transport.close()
+            self._transport = None
 
     async def send_message(self, message):
-        if self.transport is not None:
-            self.transport.sendto(message, self._gateway_address_send)
+        if self._transport:
+            logger.debug(f"Try to send busp message:\n{message}")
+            self._transport.sendto(message, self._gateway_address)
         else:
-            self.buspro.logger.info("Could not send message. Transport is None.")
+            logger.warn("Could not send message. Transport is None.")
