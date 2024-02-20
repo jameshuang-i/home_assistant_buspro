@@ -89,8 +89,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     """Setup the Buspro component. """
     hass.data.setdefault(DOMAIN, {})
 
-    host = config_entry.data.get(CONF_HOST, "")
-    port = config_entry.data.get(CONF_PORT, 1)
+    host = config_entry.data.get(CONF_HOST, "192.168.0.237")
+    port = config_entry.data.get(CONF_PORT, 6000)
 
     hass.data[DOMAIN] = BusproModule(hass, host, port)
     await hass.data[DOMAIN].start()
@@ -107,14 +107,14 @@ class BusproModule:
         self.hass = hass
         self.connected = False
         self.hdl = None
-        self.gateway_address_send_receive = ((host, port), ('', port))
+        self.gateway_address = (host, port)
+        self.local_address = ('', port)
         self.init_hdl()
 
     def init_hdl(self):
         """Initialize of Buspro object."""
-        # noinspection PyUnresolvedReferences
         from .pybuspro.buspro import Buspro
-        self.hdl = Buspro(self.gateway_address_send_receive, self.hass.loop)
+        self.hdl = Buspro(self.gateway_address, self.local_address, self.hass.loop)
         # self.hdl.register_telegram_received_all_messages_cb(self.telegram_received_cb)
 
     async def start(self):
@@ -123,30 +123,28 @@ class BusproModule:
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
 
-    # noinspection PyUnusedLocal
     async def stop(self, event):
         """Stop Buspro object. Disconnect from tunneling device."""
         await self.hdl.stop()
+        self.connected = False
 
     async def service_activate_scene(self, call):
         """Service for activatign a __scene"""
-        # noinspection PyUnresolvedReferences
         from .pybuspro.devices.scene import Scene
 
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_scene_address = call.data.get(SERVICE_BUSPRO_ATTR_SCENE_ADDRESS)
-        scene = Scene(self.hdl, attr_address, attr_scene_address, DEFAULT_SCENE_NAME)
+        scene = Scene(self.hdl, attr_address, attr_scene_address)
         await scene.run()
 
     async def service_send_message(self, call):
         """Service for send an arbitrary message"""
-        # noinspection PyUnresolvedReferences
         from .pybuspro.devices.generic import Generic
 
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_payload = call.data.get(SERVICE_BUSPRO_ATTR_PAYLOAD)
         attr_operate_code = call.data.get(SERVICE_BUSPRO_ATTR_OPERATE_CODE)
-        generic = Generic(self.hdl, attr_address, attr_payload, attr_operate_code, DEFAULT_SEND_MESSAGE_NAME)
+        generic = Generic(self.hdl, attr_address, attr_payload, attr_operate_code)
         await generic.run()
 
     async def service_set_universal_switch(self, call):

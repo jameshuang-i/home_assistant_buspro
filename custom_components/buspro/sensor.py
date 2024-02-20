@@ -58,37 +58,13 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         ])
 })
 
-
-# noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     """Set up Buspro switch devices."""
-    # noinspection PyUnresolvedReferences
     from .pybuspro.devices import Sensor
 
-    hdl = hass.data[DATA_BUSPRO].hdl
     devices = []
-
     for device_config in config[CONF_DEVICES]:
-        address = device_config[CONF_ADDRESS]
-        name = device_config[CONF_NAME]
-        sensor_type = device_config[CONF_TYPE]
-        device = device_config[CONF_DEVICE]
-        offset = device_config[CONF_OFFSET]
-        
-        scan_interval = device_config[CONF_SCAN_INTERVAL]
-        interval = 0
-        if scan_interval is not None:
-            interval = int(scan_interval)
-            
-        address2 = address.split('.')
-        device_address = (int(address2[0]), int(address2[1]))
-
-        _LOGGER.debug("Adding sensor '{}' with address {}, sensor type '{}'".format(
-            name, device_address, sensor_type))
-
-        sensor = Sensor(hdl, device_address, device=device, name=name)
-
-        devices.append(BusproSensor(hass, sensor, sensor_type, interval, offset))
+        devices.append(BusproSensor(hass, device_config))
 
     async_add_entites(devices)
 
@@ -96,30 +72,30 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 # noinspection PyAbstractClass
 class BusproSensor(Entity):
     """Representation of a Buspro switch."""
+    def __init__(self, hass, device_config):
+        from .pybuspro.devices import Sensor
 
-    def __init__(self, hass, device, sensor_type, scan_interval, offset):
-        self._hass = hass
-        self._device = device
-        self._sensor_type = sensor_type
+        self._hass = hass  
+        self._name = device_config[CONF_NAME]
+        self._sensor_type = device_config[CONF_TYPE]
+        self._address = device_config[CONF_ADDRESS]
+        self._offset = device_config[CONF_OFFSET]
+        interval = device_config[CONF_SCAN_INTERVAL] or 0
+        self._scan_interval = int(interval)
+
+        device = device_config[CONF_DEVICE]     
+        addrs = self._address.split('.')
+        device_address = (int(addrs[0]), int(addrs[1]))
+        self._device = Sensor(self._hass.data[DATA_BUSPRO].hdl, device_address, device=device)
         self.async_register_callbacks()
-        self._offset = offset
-        self._temperature = None
-        self._brightness = None
-
-        self._should_poll = False
-        if scan_interval > 0:
-            self._should_poll = True
 
     @callback
     def async_register_callbacks(self):
         """Register callbacks to update hass after device was changed."""
 
-        # noinspection PyUnusedLocal
         async def after_update_callback(device):
             """Call after device was updated."""
             if self._hass is not None:
-                self._temperature = self._device.temperature
-                self._brightness = self._device.brightness
                 self.async_write_ha_state()
 
         self._device.register_device_updated_cb(after_update_callback)
@@ -127,7 +103,7 @@ class BusproSensor(Entity):
     @property
     def should_poll(self):
         """No polling needed within Buspro unless explicitly set."""
-        return self._should_poll
+        return self._scan_interval > 0
 
     async def async_update(self):
         await self._device.read_sensor_status()
@@ -135,47 +111,39 @@ class BusproSensor(Entity):
     @property
     def name(self):
         """Return the display name of this light."""
-        return self._device.name
+        return self._name
 
     @property
     def available(self):
         """Return True if entity is available."""
-        connected = self._hass.data[DATA_BUSPRO].connected
-
-        if self._sensor_type == TEMPERATURE:
-            return connected and self._current_temperature is not None
-
-        if self._sensor_type == ILLUMINANCE:
-            return connected and self._brightness is not None
+        if self._device.is_connected:
+            if self._sensor_type == TEMPERATURE and self.current_temperature is not None:
+                return True
+            elif self._sensor_type == ILLUMINANCE and self._brightness is not None:
+                return True
+        
+        return False
 
     @property
     def state(self):
         """Return the state of the sensor."""
         if self._sensor_type == TEMPERATURE:
-            return self._current_temperature
+            return self.current_temperature
 
         if self._sensor_type == ILLUMINANCE:
-            return self._brightness
+            return self._device.brightness
 
     @property
-    def _current_temperature(self):
-        if self._temperature is None:
-            return None
-
-        temperature = self._temperature
-        if self._offset is not None and temperature != 0:
-            temperature = temperature + int(self._offset)
-
-        return temperature
-
+    def current_temperature(self):
+        if self._offset and self._device.temperature is not None:
+            return self._device.temperature + int(self._offset)
+        else:
+            return self._device.temperature
+        
     @property
     def device_class(self):
         """Return the class of this sensor."""
-        if self._sensor_type == TEMPERATURE:
-            return "temperature"
-        if self._sensor_type == ILLUMINANCE:
-            return "illuminance"
-        return None
+        return self._sensor_type
 
     @property
     def unit_of_measurement(self):
@@ -196,4 +164,4 @@ class BusproSensor(Entity):
     @property
     def unique_id(self):
         """Return the unique id."""
-        return f"{self._device.device_identifier}-{self._sensor_type}"
+        return f"{self._address}-{self._sensor_type}"

@@ -1,64 +1,65 @@
-﻿from .control import _SingleChannelControl
+﻿import asyncio
+from ..telegram import SingleChannelControlData, SingleChannelControlResponseData, ReadStatusOfChannelsData, ReadStatusOfChannelsResponseData, SceneControlResponseData
 from .device import Device
-from ..helpers.enums import *
-from ..helpers.generics import Generics
 
+logger = logging.getLogger(__name__)
 
 class Light(Device):
-    def __init__(self, buspro, device_address, channel_number, name="", delay_read_current_state_seconds=0):
-        super().__init__(buspro, device_address, name)
-        # device_address = (subnet_id, device_id, channel_number)
-
-        self._buspro = buspro
-        self._device_address = device_address
+    def __init__(self, buspro, device_address, channel_number, is_dimmable=False, running_time=0):
+        super().__init__(buspro, device_address)
         self._channel = channel_number
+        self._is_dimmable=is_dimmable
         self._brightness = 0
-        self._previous_brightness = None
+        self._previous_brightness = 100
+        
+        if is_dimmable:
+            self._running_time_mins, self._running_time_secs = divmod(running_time, 60) 
+        else:
+            self._running_time_mins, self._running_time_secs = 0, 0
+
         self.register_telegram_received_cb(self._telegram_received_cb)
-        self._call_read_current_status_of_channels(run_from_init=True)
+        self.call_read_current_status_of_channels(run_from_init=True)
 
-    def _telegram_received_cb(self, telegram):
-
-        # if telegram.target_address[1] == 72:
-        #    print("==== {}".format(str(telegram)))
-
-        if telegram.operate_code == OperateCode.SingleChannelControlResponse:
-            channel = telegram.payload[0]
-            # success = telegram.payload[1]
-            brightness = telegram.payload[2]
-            if channel == self._channel:
-                self._brightness = brightness
+    def _telegram_received_cb(self, telegram:Telegram):
+        if isinstance(telegram, SingleChannelControlResponseData):
+            if self._channel == telegram._channel: # and telegram._success
+                self._brightness = telegram._channel_status
                 self._set_previous_brightness(self._brightness)
-                self._call_device_updated()
-        elif telegram.operate_code == OperateCode.ReadStatusOfChannelsResponse:
-            if self._channel <= telegram.payload[0]:
-                self._brightness = telegram.payload[self._channel]
+                self.call_device_updated()
+        elif isinstance(telegram, ReadStatusOfChannelsResponseData):
+            if self._channel <= telegram._channel_count:
+                self._brightness = telegram.get_status(self._channel)
                 self._set_previous_brightness(self._brightness)
-                self._call_device_updated()
-        elif telegram.operate_code == OperateCode.SceneControlResponse:
-            self._call_read_current_status_of_channels()
+                self.call_device_updated()
+        elif isinstance(telegram, SceneControlResponseData):
+            self.call_read_current_status_of_channels()
+        else:
+            logger.debug(f"Light device discard the telegram: {telegram}")
+    
+    def call_read_current_status_of_channels(self, run_from_init=False):     
+        asyncio.ensure_future(self._read_current_state_of_channels(run_from_init), loop=self._buspro.loop)
 
-    async def set_on(self, running_time_seconds=0):
-        intensity = 100
-        await self._set(intensity, running_time_seconds)
+    async def _read_current_state_of_channels(self, run_from_init):
+        if run_from_init:
+            await asyncio.sleep(3)
+        control = ReadStatusOfChannelsData(self._device_address)
+        await self._buspro.send_telegram(control)
 
-    async def set_off(self, running_time_seconds=0):
-        intensity = 0
-        await self._set(intensity, running_time_seconds)
+    async def set_on(self):
+        await self._set(100)
 
-    async def set_brightness(self, intensity, running_time_seconds=0):
-        await self._set(intensity, running_time_seconds)
+    async def set_off(self):
+        await self._set(0)
+
+    async def set_brightness(self, intensity):
+        await self._set(intensity)
 
     async def read_status(self):
         raise NotImplementedError
 
     @property
-    def device_identifier(self):
-        return f"{self._device_address}-{self._channel}"
-
-    @property
     def supports_brightness(self):
-        return True
+        return self._is_dimmable
 
     @property
     def previous_brightness(self):
@@ -70,26 +71,19 @@ class Light(Device):
 
     @property
     def is_on(self):
-        if self._brightness == 0:
-            return False
-        else:
-            return True
+        return True if self._brightness else False
 
-    async def _set(self, intensity, running_time_seconds):
+    async def _set(self, intensity):
         self._brightness = intensity
         self._set_previous_brightness(self._brightness)
 
-        generics = Generics()
-        (minutes, seconds) = generics.calculate_minutes_seconds(running_time_seconds)
-
-        scc = _SingleChannelControl(self._buspro)
-        scc.subnet_id, scc.device_id = self._device_address
-        scc.channel_number = self._channel
-        scc.channel_level = intensity
-        scc.running_time_minutes = minutes
-        scc.running_time_seconds = seconds
-        await scc.send()
-
+        control = SingleChannelControlData(self._device_address)
+        control._channel_number = self._channel
+        control._channel_status = intensity
+        control._running_time_minutes = self._running_time_mins
+        control._running_time_seconds = self._running_time_secs
+        await self._buspro.send_telegram(control)
+        
     def _set_previous_brightness(self, brightness):
         if self.supports_brightness and brightness > 0:
             self._previous_brightness = brightness
