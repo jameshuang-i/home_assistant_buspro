@@ -22,7 +22,7 @@ class Light(Device):
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_status_of_channels(run_from_init=True)
 
-    def _telegram_received_cb(self, telegram:Telegram):
+    def _telegram_received_cb(self, telegram:Telegram, postfix=None):
         if isinstance(telegram, SingleChannelControlResponseData):
             if self._channel == telegram._channel: # and telegram._success
                 self._brightness = telegram._channel_status

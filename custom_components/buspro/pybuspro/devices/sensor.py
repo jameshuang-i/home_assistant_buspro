@@ -27,7 +27,7 @@ class Sensor(Device):
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_status_of_sensor(run_from_init=True)
 
-    def _telegram_received_cb(self, telegram):
+    def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telegram, ReadSensorStatusResponseData):
             copy_class_attrs(telegram, self)
             if telegram._success == SuccessOrFailure.Success:

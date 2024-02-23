@@ -15,7 +15,7 @@ class UniversalSwitch(Device):
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_status_of_universal_switch(run_from_init=True)
 
-    def _telegram_received_cb(self, telegram):
+    def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telgram, (UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchResponseData)):
             if self._switch_number == telegram._switch_number:
                 self._switch_status = telegram._switch_status

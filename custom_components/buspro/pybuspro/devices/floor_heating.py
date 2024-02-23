@@ -22,7 +22,7 @@ class FloorHeating(Device):
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_heating_status(run_from_init=True)
 
-    def _telegram_received_cb(self, telegram):
+    def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telegram, ReadFloorHeatingStatusResponseData):
             copy_class_attrs(telegram, self)
             self.call_device_updated()
