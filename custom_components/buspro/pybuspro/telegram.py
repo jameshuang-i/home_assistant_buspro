@@ -87,7 +87,7 @@ class ReadStatusOfChannelsResponseData(Telegram):
         super().__init__(device_address)
         self.operate_code = OperateCode.ReadStatusOfChannelsResponse
         self._channel_count = 0
-    def get_status(channel):
+    def get_status(self, channel):
         return self._payload[channel] if channel < self._channel_count else None
 
 class SingleChannelControlData(Telegram):
@@ -243,7 +243,7 @@ class BroadcastStatusOfUniversalSwitchData(Telegram):
         super().__init__(device_address)
         self.operate_code = OperateCode.BroadcastStatusOfUniversalSwitch
         self._switch_count = None
-    def get_switch_status(number):
+    def get_switch_status(self, number):
         return self._payload[number] if number<self._switch_count else None
 
 class ControlFloorHeatingStatusData(Telegram):
