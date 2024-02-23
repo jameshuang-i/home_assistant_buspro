@@ -80,16 +80,16 @@ class NetworkInterface:
             # 获取各字段
             # index += 1 # 17
             telegram = Telegram() 
-            logger.debug(f"source_address: {_print_bytes(data[17:19])}")           
+            # logger.debug(f"source_address: {_print_bytes(data[17:19])}")           
             telegram.source_address = (data[17], data[18])
             # index += 2 # 19
-            logger.debug(f"source_type: {_print_bytes(data[19: 21])}")  
+            # logger.debug(f"source_type: {_print_bytes(data[19: 21])}")  
             telegram.source_device_type = DeviceType.value_of(data[19: 21])
             # index += 2 # 21
-            logger.debug(f"OperateCode: {_print_bytes(data[21: 23])}")  
+            # logger.debug(f"OperateCode: {_print_bytes(data[21: 23])}")  
             telegram.operate_code = OperateCode.value_of(data[21: 23])
             # index += 2 # 23
-            logger.debug(f"target_address: {_print_bytes(data[23: 25])}")  
+            # logger.debug(f"target_address: {_print_bytes(data[23: 25])}")  
             telegram.target_address = (data[23], data[24])
             # index += 2 # 25
             telegram.payload = list(data[25:-2])
