@@ -1,3 +1,5 @@
+import logging
+
 from .udp_client import UDPClient
 from ..telegram import Telegram
 from ..enums import DeviceType, OperateCode
