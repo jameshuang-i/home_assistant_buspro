@@ -110,3 +110,7 @@ class Buspro:
         # await self.callback("LOG: Sync() triggered from StateUpdater")
         # print("LOG: Sync() triggered from StateUpdater")
         raise NotImplementedError
+
+    @property
+    def connected(self):
+        return self._started
