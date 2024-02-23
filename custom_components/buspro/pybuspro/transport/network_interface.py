@@ -42,7 +42,11 @@ class NetworkInterface:
             self._client = None
 
     async def send_telegram(self, telegram):
+        def _print_message(m):
+            ' '.join([format(x, '02x') for x in m])
+        logger.debug(f"Send Telegram: {telegrame}")
         message = self._build_send_buffer(telegram)
+        logger.debug(f"Send Message: {_print_message(message)}")
         if message and self._client:
             await self._client.send_message(message)
         else:
