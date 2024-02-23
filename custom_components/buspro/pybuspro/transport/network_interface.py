@@ -55,7 +55,7 @@ class NetworkInterface:
 
         try:
             index = 14 # 从16开始算
-            logger.debug(f"RECEIVED DATA:\r\n{data[index:]}")
+            logger.debug(f"RECEIVED DATA:\r\n{bytearray(data[index:])}")
             # 验证消息头
             if data[index: index +2 ] != b'\xAA\xAA':
                 logger.debug("The telegarm check failed!")
@@ -76,13 +76,17 @@ class NetworkInterface:
 
             # 获取各字段
             index += 1 # 17
-            telegram = Telegram()            
+            telegram = Telegram() 
+            logger.debug(f"source_address: {(data[index], data[index+1])}")           
             telegram.source_address = (data[index], data[index+1])
             index += 2 # 19
+            logger.debug(f"source_type: {bytearray(data[index: index + 2])}")  
             telegram.source_device_type = DeviceType.value_of(bytearray(data[index: index + 2]))
             index += 2 # 21
+            logger.debug(f"OperateCode: {bytearray(data[index: index + 2])}")  
             telegram.operate_code = OperateCode.value_of(bytearray(data[index: index + 2]))
             index += 2 # 23
+            logger.debug(f"target_address: {(data[index], data[index+1])}")  
             telegram.target_address = (data[index], data[index+1])
             index += 2 # 25
             telegram.payload = list(data[index:-2])
