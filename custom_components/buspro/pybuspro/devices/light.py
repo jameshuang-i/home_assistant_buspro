@@ -1,4 +1,6 @@
-﻿import asyncio
+﻿import logging
+
+import asyncio
 from ..telegram import SingleChannelControlData, SingleChannelControlResponseData, ReadStatusOfChannelsData, ReadStatusOfChannelsResponseData, SceneControlResponseData
 from .device import Device
 
