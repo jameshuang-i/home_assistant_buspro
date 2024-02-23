@@ -9,24 +9,17 @@ import logging
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.binary_sensor import (
-    PLATFORM_SCHEMA, 
-    BinarySensorEntity,
-)
-from homeassistant.const import (
-    CONF_NAME, 
-    CONF_DEVICES, 
-    CONF_ADDRESS, 
-    CONF_TYPE, 
-    CONF_DEVICE_CLASS, 
-    CONF_SCAN_INTERVAL,
-)
-from homeassistant.core import callback
+from homeassistant.components.binary_sensor import (PLATFORM_SCHEMA, BinarySensorEntity,)
+from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_ADDRESS, CONF_TYPE, CONF_DEVICE_CLASS, CONF_SCAN_INTERVAL,)
+from homeassistant.core import callback, HomeAssistant
 
-from datetime import timedelta
 from ..buspro import DATA_BUSPRO
+from .pybuspro.devices import Sensor
 
 _LOGGER = logging.getLogger(__name__)
+
+# TODO: 
+# SCAN_INTERVAL = timedelta(minutes=1)
 
 DEFAULT_CONF_DEVICE_CLASS = "None"
 DEFAULT_CONF_SCAN_INTERVAL = 0
@@ -60,65 +53,47 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         ])
 })
 
-
-# noinspection PyUnusedLocal
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
-    """Set up Buspro switch devices."""
-    devices = []
-
-    for device_config in config[CONF_DEVICES]:
-        devices.append(BusproBinarySensor(hass, device_config))
-
-    async_add_entites(devices)
+    """Set up Buspro binary sensor devices."""
+    sync_add_entites([BusproBinarySensor(hass, device_config) for device_config in config[CONF_DEVICES]])
 
 class BusproBinarySensor(BinarySensorEntity):
     """Representation of a Buspro switch."""
-    def __init__(self, hass, device_config):
-        from .pybuspro.devices import Sensor
-
-        self._hass = hass        
-        self._name = device_config[CONF_NAME]
-        scan_interval = device_config[CONF_SCAN_INTERVAL] or 0
-        self._scan_interval = int(scan_interval)   
-        self._device_class = device_config[CONF_DEVICE_CLASS]
-        self._address = device_config[CONF_ADDRESS]
-        self._sensor_type = device_config[CONF_TYPE]  
+    def __init__(self, hass:HomeAssistant, device_config:dict):      
+        self._hass:HomeAssistant = hass        
+        self._name:str = device_config[CONF_NAME]
+        self._scan_interval:int = int(device_config[CONF_SCAN_INTERVAL]) if CONF_SCAN_INTERVAL in device_config else 0  
+        self._device_class:str = device_config[CONF_DEVICE_CLASS]
+        self._address:str = device_config[CONF_ADDRESS]
+        self._sensor_type:str = device_config[CONF_TYPE]  
 
         _addrs = self._address.split('.')
         device_address = (int(_addrs[0]), int(_addrs[1]))
+        universal_switch_number = int(_addrs[2]) if self._sensor_type == CONF_UNIVERSAL_SWITCH else None
+        channel_number = int(_addrs[2]) if self._sensor_type == CONF_SINGLE_CHANNEL else None
+        switch_number = int(_addrs[2]) if self._sensor_type == CONF_DRY_CONTACT else None
+        _LOGGER.debug(f"Creating sensor for {self._name} ...")   
+        self._device:Sensor = Sensor(self._hass.data[DATA_BUSPRO].hdl, device_address, universal_switch_number, channel_number, None, switch_number)
 
-        universal_switch_number = None
-        channel_number = None
-        switch_number = None        
-
-        if sensor_type == CONF_UNIVERSAL_SWITCH:
-            universal_switch_number = int(_addrs[2])
-        elif sensor_type == CONF_SINGLE_CHANNEL:
-            channel_number = int(_addrs[2])
-        elif sensor_type == CONF_DRY_CONTACT:
-            switch_number = int(_addrs[2])
-
-        self._device = Sensor(self._hass.data[DATA_BUSPRO].hdl, device_address, universal_switch_number, channel_number, None, switch_number)
         self.async_register_callbacks()
 
     @callback
     def async_register_callbacks(self):
         """Register callbacks to update hass after device was changed."""
-
         async def after_update_callback(device):
             """Call after device was updated."""
-            await self.async_update_ha_state()
+            await self.async_write_ha_state()
 
         self._device.register_device_updated_cb(after_update_callback)
 
     @property
     def should_poll(self):
         """No polling needed within Buspro."""
-        return self._scan_interval > 0
+        return self._scan_interval > 0  # 轮询时间为全局
 
     async def async_update(self):
-        if self._sensor_type == CONF_UNIVERSAL_SWITCH:
-            await self._device.read_sensor_status()
+        # if self._sensor_type == CONF_UNIVERSAL_SWITCH:
+        await self._device.read_sensor_status()
 
     @property
     def name(self):

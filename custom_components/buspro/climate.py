@@ -10,29 +10,16 @@ from typing import Optional, List
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.climate import (
-    PLATFORM_SCHEMA,
-    ClimateEntity,
-    ClimateEntityFeature,
-    HVACMode,
-    HVACAction,
-)
-from homeassistant.components.climate.const import (
-    SUPPORT_PRESET_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
-)
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_DEVICES,
-    CONF_ADDRESS,
-    ATTR_TEMPERATURE,
-    UnitOfTemperature,
-)
-from homeassistant.core import callback
+from homeassistant.components.climate import (PLATFORM_SCHEMA, ClimateEntity, ClimateEntityFeature, HVACMode, HVACAction,)
+from homeassistant.components.climate.const import (SUPPORT_PRESET_MODE, SUPPORT_TARGET_TEMPERATURE,)
+from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_ADDRESS, ATTR_TEMPERATURE, UnitOfTemperature,)
+from homeassistant.core import callback, HomeAssistant
 from ..buspro import DATA_BUSPRO
-from .pybuspro.helpers.enums import OnOffStatus, PresetMode, TemperatureType
+from .pybuspro.enums import OnOffStatus, PresetMode, TemperatureType
+from .pybuspro.helpers import parse_device_address
+from .pybuspro.devices import FloorHeating
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 CONF_PRESET_MODES = "preset_modes"
 
@@ -48,42 +35,30 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 })
 
 
-async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
-    devices = []
-
-    for device_config in config[CONF_DEVICES]:
-        devices.append(BusproClimate(hass, device_config))
-
-    async_add_entites(devices)
-
+async def async_setup_platform(hass:HomeAssistant, config, async_add_entites, discovery_info=None):
+    async_add_entites([BusproClimate(hass, device_config) for device_config in config[CONF_DEVICES]])
+    
 
 class BusproClimate(ClimateEntity):
-    """Representation of a Buspro switch."""
+    """Representation of a Buspro climate."""
+    def __init__(self, hass:HomeAssistant, device_config:dict) -> None:       
+        self._hass:HomeAssistant = hass
+        self._device_key:str = device_config[CONF_ADDRESS]
+        self._name:str = device_config[CONF_NAME]
+        self._preset_modes:Optional[List[str]] = device_config[CONF_PRESET_MODES]
 
-    def __init__(self, hass, device_config):
-        from .pybuspro.devices import CFloorHeating
-
-        self._hass = hass
-        self._device_key = device_config[CONF_ADDRESS]
-        self._name = device_config[CONF_NAME]
-        self._preset_modes = device_config[CONF_PRESET_MODES]
-
-        _addr = self._device_key.split('.')
-        device_address = (int(_addr[0]), int(_addr[1]))
-        self._device = CFloorHeating(self._hass.data[DATA_BUSPRO].hdl, device_address)
+        device_address, _ = parse_device_address(self._device_key)
+        self._device:FloorHeating = FloorHeating(self._hass.data[DATA_BUSPRO].hdl, device_address)
 
         self.async_register_callbacks()
 
     @callback
     def async_register_callbacks(self):
         """Register callbacks to update hass after device was changed."""
-
         async def after_update_callback(device):
             """Call after device was updated."""
             # logger.debug(f"Device '{self._device.name} IsOn={self._is_on} Mode={self._device.mode} TargetTemp={self._device.target_temperature}")
-
-            if self._hass is not None:
-                self.async_write_ha_state()
+            self.async_write_ha_state()
 
         self._device.register_device_updated_cb(after_update_callback)
 
@@ -110,7 +85,7 @@ class BusproClimate(ClimateEntity):
         elif self._device.unit_of_measurement == TemperatureType.Fahrenheit:
             return UnitOfTemperature.FAHRENHEIT
         else:
-            logger.error(f"Not supported the temperature type: {self._device._temperature_type}, return Celsius default.")
+            _LOGGER.error(f"Not supported the temperature type: {self._device._temperature_type}, return Celsius default.")
             return UnitOfTemperature.CELSIUS
 
     @property
@@ -152,10 +127,10 @@ class BusproClimate(ClimateEntity):
                 mode = p
                 break
         if mode:
-            logger.debug(f"Setting preset mode to '{mode}' for device '{self._name}'")
+            _LOGGER.debug(f"Setting preset mode to '{mode}' for device '{self._name}'")
             await self._device.async_set_preset_mode(mode)
         else:
-            logger.error(f"Not supported the preset mode '{preset_mode}'")
+            _LOGGER.error(f"Not supported the preset mode '{preset_mode}'")
 
     @property
     def hvac_action(self) -> Optional[str]:
@@ -185,7 +160,7 @@ class BusproClimate(ClimateEntity):
         elif hvac_mode == HVACMode.HEAT:
             await self._device.async_turn_on()
         else:
-            logger.error("Unrecognized hvac mode: %s", hvac_mode)
+            _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
 
     @property
@@ -204,6 +179,6 @@ class BusproClimate(ClimateEntity):
         if temperature is None:
             return
         target_temperature = int(temperature)
-        logger.debug(f"Setting target temperature to {target_temperature}")
+        _LOGGER.debug(f"Setting target temperature to {target_temperature}")
 
         await self._device.async_set_target_temperature(temperature)

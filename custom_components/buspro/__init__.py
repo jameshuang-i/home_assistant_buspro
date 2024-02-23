@@ -6,30 +6,26 @@ https://home-assistant.io/...
 """
 
 import logging
+import typing
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.const import (
-    CONF_HOST, 
-    CONF_PORT, 
-    CONF_NAME,
-)
-from homeassistant.const import (
-    EVENT_HOMEASSISTANT_STOP,
-)
+from homeassistant.const import (CONF_HOST, CONF_PORT, CONF_NAME,)
+from homeassistant.const import (EVENT_HOMEASSISTANT_STOP,)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+
+from .pybuspro.buspro import Buspro
+from .pybuspro.devices.scene import Scene
+from .pybuspro.devices.generic import Generic
+from .pybuspro.devices.universal_switch import UniversalSwitch
 
 _LOGGER = logging.getLogger(__name__)
 
 DOMAIN = "buspro"
 DATA_BUSPRO = "buspro"
-DEPENDENCIES = []
 
 DEFAULT_CONF_NAME = ""
-
-DEFAULT_SCENE_NAME = "BUSPRO SCENE"
-DEFAULT_SEND_MESSAGE_NAME = "BUSPRO MESSAGE"
 
 SERVICE_BUSPRO_SEND_MESSAGE = "send_message"
 SERVICE_BUSPRO_ACTIVATE_SCENE = "activate_scene"
@@ -74,48 +70,36 @@ async def async_setup(hass: HomeAssistant, config: dict):
     """Setup the Buspro component. """
     if DOMAIN not in config:
         return True
-
-    host = config[DOMAIN][CONF_HOST]
-    port = config[DOMAIN][CONF_PORT]
-
-    hass.data[DATA_BUSPRO] = BusproModule(hass, host, port)
-    await hass.data[DATA_BUSPRO].start()
-
-    hass.data[DATA_BUSPRO].register_services()
-
-    return True
+    _LOGGER.debug(f"Trying to setup buspro with config {config[DOMAIN]} ...")
+    return await _init_buspro(hass, config[DOMAIN])
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Setup the Buspro component. """
-    hass.data.setdefault(DOMAIN, {})
+    _LOGGER.debug(f"Trying to setup entry for buspro with config {config_entry.data} ...")
+    return await _init_buspro(hass, config_entry.data)
 
-    host = config_entry.data.get(CONF_HOST, "192.168.0.237")
-    port = config_entry.data.get(CONF_PORT, 6000)
-
-    hass.data[DOMAIN] = BusproModule(hass, host, port)
-    await hass.data[DOMAIN].start()
-
-    hass.data[DOMAIN].register_services()
-
+async def _init_buspro(hass:HomeAssistant, config: dict) -> bool:
+    buspro_module = BusproModule(hass, config[CONFIG_HOST], config[CONFIG_PORT])
+    hass.data[DATA_BUSPRO] = buspro_module
+    _LOGGER("Inited the buspro module and try to start service ...")
+    await buspro_module.start()
+    _LOGGER("Try to register ha services ...")
+    buspro_module.register_services()
     return True
+
 
 class BusproModule:
     """Representation of Buspro Object."""
 
-    def __init__(self, hass, host, port):
+    def __init__(self, hass:HomeAssistant, host:str, port:int):
         """Initialize of Buspro module."""
-        self.hass = hass
-        self.connected = False
-        self.hdl = None
-        self.gateway_address = (host, port)
-        self.local_address = ('', port)
-        self.init_hdl()
+        self.hass:HomeAssistant = hass
+        self.gateway_address:typing.Tuple[str,int] = (host, port)
+        self.local_address:typing.Tuple[str,int] = ('', port)
 
-    def init_hdl(self):
-        """Initialize of Buspro object."""
-        from .pybuspro.buspro import Buspro
-        self.hdl = Buspro(self.gateway_address, self.local_address, self.hass.loop)
-        # self.hdl.register_telegram_received_all_messages_cb(self.telegram_received_cb)
+        self.connected:bool = False
+        # Initialize of Buspro object.
+        self.hdl:Buspro = Buspro(self.gateway_address, self.local_address, self.hass.loop)     
 
     async def start(self):
         """Start Buspro object. Connect to tunneling device."""
@@ -129,18 +113,14 @@ class BusproModule:
         self.connected = False
 
     async def service_activate_scene(self, call):
-        """Service for activatign a __scene"""
-        from .pybuspro.devices.scene import Scene
-
+        _LOGGER.debug(f"Activate scene service called with data {call.data}")
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_scene_address = call.data.get(SERVICE_BUSPRO_ATTR_SCENE_ADDRESS)
         scene = Scene(self.hdl, attr_address, attr_scene_address)
         await scene.run()
 
     async def service_send_message(self, call):
-        """Service for send an arbitrary message"""
-        from .pybuspro.devices.generic import Generic
-
+        _LOGGER.debug(f"Send message service called with data {call.data}")
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_payload = call.data.get(SERVICE_BUSPRO_ATTR_PAYLOAD)
         attr_operate_code = call.data.get(SERVICE_BUSPRO_ATTR_OPERATE_CODE)
@@ -148,9 +128,7 @@ class BusproModule:
         await generic.run()
 
     async def service_set_universal_switch(self, call):
-        # noinspection PyUnresolvedReferences
-        from .pybuspro.devices.universal_switch import UniversalSwitch
-
+        _LOGGER.debug(f"Universal switch service called with data {call.data}")
         attr_address = call.data.get(SERVICE_BUSPRO_ATTR_ADDRESS)
         attr_switch_number = call.data.get(SERVICE_BUSPRO_ATTR_SWITCH_NUMBER)
         universal_switch = UniversalSwitch(self.hdl, attr_address, attr_switch_number)
@@ -162,7 +140,6 @@ class BusproModule:
             await universal_switch.set_off()
 
     def register_services(self):
-
         """ activate_scene """
         self.hass.services.async_register(
             DOMAIN, SERVICE_BUSPRO_ACTIVATE_SCENE,
@@ -180,14 +157,3 @@ class BusproModule:
             DOMAIN, SERVICE_BUSPRO_UNIVERSAL_SWITCH,
             self.service_set_universal_switch,
             schema=SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA)
-
-    '''
-    def telegram_received_cb(self, telegram):
-        #     """Call invoked after a KNX telegram was received."""
-        #     self.hass.bus.fire('knx_event', {
-        #         'address': str(telegram.group_address),
-        #         'data': telegram.payload.value
-        #     })
-        # _LOGGER.info(f"Callback: '{telegram}'")
-        return False
-    '''
