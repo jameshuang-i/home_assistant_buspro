@@ -55,7 +55,8 @@ class NetworkInterface:
 
         try:
             index = 14 # 从16开始算
-            logger.debug(f"RECEIVED DATA:\r\n{bytearray(data[index:])}")
+            logger.debug("RECEIVED DATA:\r\n")
+            logger.debug(' '.join([format(x, '02x') for x in data[index:]]))
             # 验证消息头
             if data[index: index +2 ] != b'\xAA\xAA':
                 logger.debug("The telegarm check failed!")
