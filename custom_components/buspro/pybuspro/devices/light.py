@@ -1,7 +1,7 @@
 ﻿import logging
 
 import asyncio
-from ..telegram import SingleChannelControlData, SingleChannelControlResponseData, ReadStatusOfChannelsData, ReadStatusOfChannelsResponseData, SceneControlResponseData
+from ..telegram import Telegram, SingleChannelControlData, SingleChannelControlResponseData, ReadStatusOfChannelsData, ReadStatusOfChannelsResponseData, SceneControlResponseData
 from .device import Device
 
 logger = logging.getLogger(__name__)

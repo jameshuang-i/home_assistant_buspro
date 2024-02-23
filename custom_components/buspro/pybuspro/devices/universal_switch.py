@@ -1,6 +1,6 @@
 import asyncio
 
-from ..telegram import UniversalSwitchControlData, UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchData, ReadStatusOfUniversalSwitchResponseData
+from ..telegram import Telegram, UniversalSwitchControlData, UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchData, ReadStatusOfUniversalSwitchResponseData
 from .device import Device
 from ..enums import OnOff
 

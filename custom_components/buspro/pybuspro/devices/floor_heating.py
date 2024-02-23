@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from ..telegram import ReadFloorHeatingStatusData, ReadFloorHeatingStatusResponseData, ControlFloorHeatingStatusData, ControlFloorHeatingStatusResponseData, BroadcastTemperatureResponseData
+from ..telegram import Telegram, ReadFloorHeatingStatusData, ReadFloorHeatingStatusResponseData, ControlFloorHeatingStatusData, ControlFloorHeatingStatusResponseData, BroadcastTemperatureResponseData
 from .device import Device
 from ..helpers import copy_class_attrs
 from ..enums import *
