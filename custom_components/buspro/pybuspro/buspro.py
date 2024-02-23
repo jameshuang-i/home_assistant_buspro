@@ -71,7 +71,7 @@ class Buspro:
     
     async def send_telegram(self, telegram):
         if self._net:
-            self._net.send_telegram(telegram)
+            await self._net.send_telegram(telegram)
         else:
             logger.error("Send telegram failed as buspro not connected!")
 
