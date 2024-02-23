@@ -79,9 +79,9 @@ class NetworkInterface:
             telegram = Telegram()            
             telegram.source_address = (data[index], data[index+1])
             index += 2 # 19
-            telegram.source_device_type = DeviceType.value_of(data[index: index + 2])
+            telegram.source_device_type = DeviceType.value_of(bytearray(data[index: index + 2]))
             index += 2 # 21
-            telegram.operate_code = OperateCode.value_of(data[index: index + 2])
+            telegram.operate_code = OperateCode.value_of(bytearray(data[index: index + 2]))
             index += 2 # 23
             telegram.target_address = (data[index], data[index+1])
             index += 2 # 25
@@ -92,7 +92,7 @@ class NetworkInterface:
             return telegram
             
         except Exception as e:
-            print("error building telegram: {}".format(traceback.format_exc()))
+            logger.error("error building telegram: {}".format(traceback.format_exc()))
             return None
     
     def _build_send_buffer(self, telegram: Telegram):
