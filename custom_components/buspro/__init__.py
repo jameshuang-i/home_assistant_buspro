@@ -79,7 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     return await _init_buspro(hass, config_entry.data)
 
 async def _init_buspro(hass:HomeAssistant, config: dict) -> bool:
-    buspro_module = BusproModule(hass, config[CONFIG_HOST], config[CONFIG_PORT])
+    buspro_module = BusproModule(hass, config[CONF_HOST], config[CONF_PORT])
     hass.data[DATA_BUSPRO] = buspro_module
     _LOGGER("Inited the buspro module and try to start service ...")
     await buspro_module.start()
