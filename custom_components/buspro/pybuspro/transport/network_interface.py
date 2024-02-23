@@ -129,7 +129,7 @@ class NetworkInterface:
         # CRC校验
         crc = self._crc16(bytes(send_buf[16:])) #从长度开始的内容
         crc0, crc1 = pack(">H", crc)
-        send_buf.extend((crc0,crc,1))
+        send_buf.extend((crc0,crc1))
 
         return send_buf
 
