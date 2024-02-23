@@ -53,44 +53,46 @@ class NetworkInterface:
             logger.debug("The received data is none or less then 27, abort!")
             return None
 
+        def _print_bytes(datas):
+            return ' '.join([format(x, '02x') for x in datas])
+
         try:
-            index = 14 # 从16开始算
-            logger.debug("RECEIVED DATA:\r\n")
-            logger.debug(' '.join([format(x, '02x') for x in data[index:]]))
+            # index = 14 # 从16开始算
+            logger.debug(f"RECEIVED DATA: {_print_bytes(data[14:])}")
             # 验证消息头
-            if data[index: index +2 ] != b'\xAA\xAA':
+            if data[14: 16 ] != b'\xAA\xAA':
                 logger.debug("The telegarm check failed!")
                 return None
-            index += 2 # 16
-            length_package = data[index]
+            # index += 2 # 16
+            length_package = data[16]
             # 校验长度
             if length_package + 16 != len(data):
                 logger.debug(f"The data length {len(data)} not match the package length {length_package}")
                 return None
             # CRC校验
             crc = data[-2:]
-            crc_bufer = data[index:-2]
+            crc_bufer = data[16:-2]
             crc_computed = pack(">H", self._crc16(crc_bufer))
             if crc_computed != crc:
                 logger.debug('CRC check failed!')
                 return None
 
             # 获取各字段
-            index += 1 # 17
+            # index += 1 # 17
             telegram = Telegram() 
-            logger.debug(f"source_address: {(data[index], data[index+1])}")           
-            telegram.source_address = (data[index], data[index+1])
-            index += 2 # 19
-            logger.debug(f"source_type: {bytearray(data[index: index + 2])}")  
-            telegram.source_device_type = DeviceType.value_of(bytearray(data[index: index + 2]))
-            index += 2 # 21
-            logger.debug(f"OperateCode: {bytearray(data[index: index + 2])}")  
-            telegram.operate_code = OperateCode.value_of(bytearray(data[index: index + 2]))
-            index += 2 # 23
-            logger.debug(f"target_address: {(data[index], data[index+1])}")  
-            telegram.target_address = (data[index], data[index+1])
-            index += 2 # 25
-            telegram.payload = list(data[index:-2])
+            logger.debug(f"source_address: {_print_bytes(data[17:19])}")           
+            telegram.source_address = (data[17], data[18])
+            # index += 2 # 19
+            logger.debug(f"source_type: {_print_bytes(data[19: 21])}")  
+            telegram.source_device_type = DeviceType.value_of(data[19: 21])
+            # index += 2 # 21
+            logger.debug(f"OperateCode: {_print_bytes(data[21: 23])}")  
+            telegram.operate_code = OperateCode.value_of(data[21: 23])
+            # index += 2 # 23
+            logger.debug(f"target_address: {_print_bytes(data[23: 25])}")  
+            telegram.target_address = (data[23], data[24])
+            # index += 2 # 25
+            telegram.payload = list(data[25:-2])
             telegram.crc = crc
             # telegram.udp_address = address
             
