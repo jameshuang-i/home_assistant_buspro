@@ -14,11 +14,13 @@ from homeassistant.const import (CONF_NAME, CONF_DEVICES)
 from homeassistant.core import callback
 
 from ..buspro import DATA_BUSPRO
+from .pybuspro.devices import Light
+from .pybuspro.helpers import parse_device_address
 
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_DEVICE_RUNNING_TIME = 0
-DEFAULT_PLATFORM_RUNNING_TIME = 0
+# DEFAULT_PLATFORM_RUNNING_TIME = 0
 DEFAULT_DIMMABLE = False
 
 DEVICE_SCHEMA = vol.Schema({
@@ -48,30 +50,25 @@ class BusproLight(LightEntity):
     """Representation of a Buspro light."""
 
     def __init__(self, hass, key, device_config):
-        from .pybuspro.devices import Light
-
         self._hass = hass
         self._name = device_config[CONF_NAME]        
         self._device_id = key
+
         # 创建light设备
-        _addrs = key.split('.')
         buspro = hass.data[DATA_BUSPRO].hdl
-        device_address = (int(_addrs[0]), int(_addrs[1]))
-        channel_num = int(_addrs[2])
+        device_address, channel_num = parse_device_address(key)
         device_running_time = int(device_config["running_time"])
         dimmable = bool(device_config["dimmable"])
-        self._device = Light(buspro, device_address, channel_num, dimmable, device_running_time)
+        self._device:Light = Light(buspro, device_address, channel_num, dimmable, device_running_time)
 
         self.async_register_callbacks()
 
     @callback
     def async_register_callbacks(self):
         """Register callbacks to update hass after device was changed."""
-
-        # noinspection PyUnusedLocal
         async def after_update_callback(device):
             """Call after device was updated."""
-            await self.async_update_ha_state()
+            await self.async_write_ha_state()
 
         self._device.register_device_updated_cb(after_update_callback)
 

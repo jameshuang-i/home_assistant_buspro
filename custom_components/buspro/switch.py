@@ -14,6 +14,8 @@ from homeassistant.const import (CONF_NAME, CONF_DEVICES)
 from homeassistant.core import callback
 
 from ..buspro import DATA_BUSPRO
+from .pybuspro.devices import UniversalSwitch
+from .pybuspro.helpers import parse_device_address
 
 logger = logging.getLogger(__name__)
 
@@ -40,16 +42,12 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
 # noinspection PyAbstractClass
 class BusproSwitch(SwitchEntity):
     """Representation of a Buspro switch."""
-
-    def __init__(self, hass, address, device_config):
-        from .pybuspro.devices import UniversalSwitch
+    def __init__(self, hass, address, device_config):        
         self._hass = hass
         self._name = device_config[CONF_NAME]
         self._device_key = address
 
-        addrs = address.split('.')
-        device_address = (int(addrs[0]), int(addrs[1]))
-        channel_number = int(addrs[2])
+        device_address, channel_number = parse_device_address(address)
         self._device = UniversalSwitch(hass.data[DATA_BUSPRO].hdl, device_address, channel_number)
 
         self.async_register_callbacks()
