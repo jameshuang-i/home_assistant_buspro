@@ -21,8 +21,6 @@ class UniversalSwitch(Device):
         if isinstance(telegram, (UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchResponseData)):
             if self._switch_number == telegram._switch_number:
                 self._switch_status = OnOff.value_of(telegram._switch_status)
-                if self._switch_status is None:
-                    logger.error(f"The switch status error, telegrame is {telegram}")
                 self.call_device_updated()
 
     async def set_on(self):
