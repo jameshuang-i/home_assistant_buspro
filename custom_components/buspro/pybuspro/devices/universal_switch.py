@@ -46,7 +46,7 @@ class UniversalSwitch(Device):
     def call_read_current_status_of_universal_switch(self, run_from_init=False):
         asyncio.ensure_future(self._read_current_state_of_universal_switch(run_from_init), loop=self._buspro.loop)
     
-    async def _read_current_state_of_universal_switch(self, run_form_init):
+    async def _read_current_state_of_universal_switch(self, run_from_init):
         if run_from_init:
             await asyncio.sleep(1)
 
