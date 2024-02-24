@@ -16,7 +16,7 @@ class UniversalSwitch(Device):
         self.call_read_current_status_of_universal_switch(run_from_init=True)
 
     def _telegram_received_cb(self, telegram, postfix=None):
-        if isinstance(telgram, (UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchResponseData)):
+        if isinstance(telegram, (UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchResponseData)):
             if self._switch_number == telegram._switch_number:
                 self._switch_status = telegram._switch_status
                 self.call_device_updated()
@@ -44,7 +44,7 @@ class UniversalSwitch(Device):
         await self._buspro.send_telegram(control)
 
     def call_read_current_status_of_universal_switch(self, run_from_init=False):
-        asyncio.ensure_future(self._read_current_state_of_universal_switch(run_form_init), loop=self._buspro.loop)
+        asyncio.ensure_future(self._read_current_state_of_universal_switch(run_from_init), loop=self._buspro.loop)
     
     async def _read_current_state_of_universal_switch(self, run_form_init):
         if run_from_init:
