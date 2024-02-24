@@ -2,15 +2,15 @@ import asyncio
 
 from ..telegram import Telegram, UniversalSwitchControlData, UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchData, ReadStatusOfUniversalSwitchResponseData
 from .device import Device
-from ..enums import OnOff
+from ..enums import OnOff, SwitchStatusOnOff
 
 
 class UniversalSwitch(Device):
     def __init__(self, buspro, device_address, switch_number):
-        super().__init__(buspro, device_address, name)
+        super().__init__(buspro, device_address)
 
         self._switch_number = switch_number
-        self._switch_status = SwitchStatusOnOff.OFF
+        self._switch_status = OnOff.OFF
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_status_of_universal_switch(run_from_init=True)
