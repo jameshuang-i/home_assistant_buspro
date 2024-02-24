@@ -34,7 +34,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
     devices = []
 
     for address, device_config in config[CONF_DEVICES].items():
-        devices.append(BusproSwitch(hass, switch))
+        devices.append(BusproSwitch(hass, address, device_config))
 
     async_add_entites(devices)
 
