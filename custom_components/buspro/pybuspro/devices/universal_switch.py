@@ -1,16 +1,18 @@
 import asyncio
+import logging
 
 from ..telegram import Telegram, UniversalSwitchControlData, UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchData, ReadStatusOfUniversalSwitchResponseData
 from .device import Device
 from ..enums import OnOff, SwitchStatusOnOff
 
+logger = logging.getLogger(__name__)
 
 class UniversalSwitch(Device):
     def __init__(self, buspro, device_address, switch_number):
         super().__init__(buspro, device_address)
 
         self._switch_number = switch_number
-        self._switch_status = OnOff.OFF
+        self._switch_status:OnOff = OnOff.OFF
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_status_of_universal_switch(run_from_init=True)
@@ -18,7 +20,9 @@ class UniversalSwitch(Device):
     def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telegram, (UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchResponseData)):
             if self._switch_number == telegram._switch_number:
-                self._switch_status = telegram._switch_status
+                self._switch_status = OnOff.value_of(telegram._switch_status)
+                if self._switch_status is None:
+                    logger.error(f"The switch status error, telegrame is {telegram}")
                 self.call_device_updated()
 
     async def set_on(self):
@@ -39,7 +43,7 @@ class UniversalSwitch(Device):
 
         control = UniversalSwitchControlData(self._device_address)
         control._switch_number = self._switch_number
-        control._switch_status = self._switch_status
+        control._switch_status = self._switch_status.value
 
         await self._buspro.send_telegram(control)
 
