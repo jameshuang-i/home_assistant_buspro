@@ -1,10 +1,17 @@
 import typing
+import logging
+
+logger = logger.getLogger(__name__)
 
 def copy_class_attrs(source, target):
-    source_dict = vars(source)
+    source_dict = vars(source)    
     target_dict = vars(target)
+    
     source_attrs = [k for k in source_dict.keys() if k.startswith("_") and k!='_payload']
     target_attrs = [k for k in target_dict.keys() if k.startswith("_") and k!='_payload']
+    
+    logger.debug(f"source_attrs = {source_attrs}")
+    logger.debug(f"target_attrs = {target_attrs}")
 
     for target_attr in target_attrs:
         if target_attr in source_attrs:
