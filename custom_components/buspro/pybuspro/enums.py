@@ -71,6 +71,18 @@ class TemperatureMode(BaseEnum):
     Away = 4
     Timer = 5
 
+class AirConditionMode(BaseEnum):
+    Cool = 0
+    Heat = 1
+    Fan = 2
+    Auto = 3
+    Dry = 4
+
+class FanMode(BaseEnum):
+    Auto = 0
+    High = 1
+    Medium = 2
+    Low = 3
 
 class OperateCode(BaseEnum):
     NotSet = b'\x00'
@@ -105,6 +117,11 @@ class OperateCode(BaseEnum):
 
     ReadSensorsInOneStatus = b'\x16\x04'
     ReadSensorsInOneStatusResponse = b'\x16\x05'
+
+    ReadAirConditionStatus = b'\x19\x38'
+    ReadAirConditionStatusResponse = b'\x19\x39'
+    ControlAirCondition = b'\x19\x3A'
+    ControlAirConditionResponse = b'\x19\x3B'
 
     """
     # 

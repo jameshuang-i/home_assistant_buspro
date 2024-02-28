@@ -4,3 +4,4 @@ from .light import Light
 from .scene import Scene
 from .sensor import Sensor
 from .universal_switch import UniversalSwitch
+from .air_condition import AirCondition

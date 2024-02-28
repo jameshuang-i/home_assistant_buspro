@@ -106,17 +106,6 @@ class SingleChannelControlResponseData(Telegram):
         self._success = None
         self._channel_status = None
 
-class SceneControlData(Telegram):
-    def __init__(self, device_address):
-        super().__init__(device_address)
-        self.operate_code = OperateCode.SceneControl
-        self._area_number = None
-        self._scene_number = None
-class SceneControlResponseData(Telegram):
-    def __init__(self, device_address):
-        super().__init__(device_address)
-        self.operate_code = OperateCode.SceneControlResponse
-
 class ReadStatusOfUniversalSwitchData(Telegram):
     def __init__(self, device_address):
         super().__init__(device_address)
@@ -149,7 +138,11 @@ class SceneControlData(Telegram):
         self.operate_code = OperateCode.SceneControl
         self._area_number = None
         self._scene_number = None
-
+class SceneControlResponseData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.SceneControlResponse
+        
 class ReadSensorStatusData(Telegram):
     def __init__(self, device_address):
         super().__init__(device_address)
@@ -185,17 +178,6 @@ class ReadSensorsInOneStatusResponseData(Telegram):
         self._motion_sensor = None
         self._dry_contact_1_status = None
         self._dry_contact_2_status = None
-
-class ReadFloorHeatingStatusData(Telegram):
-    def __init__(self, device_address):
-        super().__init__(device_address)
-        self.operate_code = OperateCode.ReadFloorHeatingStatus
-class ReadFloorHeatingStatusResponseData(Telegram):
-    def __init__(self, device_address):
-        super().__init__(device_address)
-        self.operate_code = OperateCode.ReadFloorHeatingStatusResponse
-        self._bit_0 = None
-        self._current_temperature = None
 
 class ReadDryContactStatusData(Telegram):
     def __init__(self, device_address):
@@ -288,4 +270,59 @@ class ReadFloorHeatingStatusResponseData(Telegram):
         self._night_temperature = None
         self._away_temperature = None
 
+class ReadAirConditionStatusData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ReadAirConditionStatus
+        self._ac_number = None
+class ReadAirConditionStatusResponseData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ReadAirConditionStatusResponse
+        self._ac_number = None
+        self._temperature_type = None # 0-C, 1-F
+        self._current_temperature = None
+        self._cool_temperature = None
+        self._heat_temperature = None
+        self._auto_temperature = None
+        self._dry_temperature = None
+        self._status = None # 0-OFF, 1-ON
+        self._mode = None # 0-COOL, 1-Heat, 2-FAN, 3-Auto, 4-Dry
+        self._fan = None # 0-Auto, 1-High, 2-Medium, 3-Low
+        self._temperature # 不清楚指定的是什么温度
+        self._bit_12 # 都是00
 
+class ControlAirConditionData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ControlAirCondition
+        self._ac_number = None
+        self._temperature_type = None
+        self._current_temperature = None
+        self._cool_temperature = None
+        self._heat_temperature = None
+        self._auto_temperature = None
+        self._dry_temperature = None
+        self._bit_7 = 48 # 十六进制30
+        self._status = None
+        self._mode = None
+        self._fan = None
+        self._bit_11 = 0
+        self._bit_12 = 0
+class ControlAirConditionResponseData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ControlAirConditionResponse
+        self._ac_number = None
+        self._temperature_type = None
+        self._current_temperature = None
+        self._cool_temperature = None
+        self._heat_temperature = None
+        self._auto_temperature = None
+        self._dry_temperature = None
+        self._bit_7 = None
+        self._status = None
+        self._mode = None
+        self._fan = None
+        self._bit_11 = None
+        self._bit_12 = None
