@@ -92,8 +92,9 @@ class BusproClimate(ClimateEntity):
         if self._type == "ac":
             support |= ClimateEntityFeature.TARGET_HUMIDITY 
             support |= ClimateEntityFeature.FAN_MODE 
-            support |= ClimateEntityFeature.TURN_OFF 
-            support |= ClimateEntityFeature.TURN_ON 
+            # 老板本中没有这两个
+            # support |= ClimateEntityFeature.TURN_OFF 
+            # support |= ClimateEntityFeature.TURN_ON 
         return support
 
     @property
