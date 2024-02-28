@@ -22,12 +22,12 @@ from .pybuspro.devices import AirCondition
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_DEVICES): {cv.string: {
-        vol.Schema({
+    vol.Required(CONF_DEVICES): {
+        cv.string: vol.Schema({
             vol.Required(CONF_NAME): cv.string,
             vol.Optional("type", default="ac"): cv.string,
         })
-    }},
+    },
 })
 
 FAN_MODE_TRANSLATE = [FAN_AUTO, FAN_HIGH, FAN_MEDIUM, FAN_LOW]
