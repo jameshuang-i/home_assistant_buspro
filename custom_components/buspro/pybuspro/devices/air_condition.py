@@ -39,7 +39,7 @@ class AirCondition(Device):
     def _telegram_received_control_status_cb(self, telegram, air_condition_status:ControlAirConditionData):
         if isinstance(telegram, ReadAirConditionStatusResponseData):
             if telegram._ac_number == self.ac_number:
-                self.unregister_device_updated_cb(self._telegram_received_control_status_cb, air_condition_status)
+                self.unregister_telegram_received_cb(self._telegram_received_control_status_cb, air_condition_status)
 
                 control = ControlAirConditionData(self._device_address)
                 copy_class_attrs(telegram, control)
