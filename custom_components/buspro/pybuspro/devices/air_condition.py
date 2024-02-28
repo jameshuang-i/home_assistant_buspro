@@ -30,7 +30,7 @@ class AirCondition(Device):
                 copy_class_attrs(telegram, self)
                 self.call_device_updated()
         elif isinstance(telegram, ControlAirConditionResponseData):
-            if telegram._ac_number == self.ac_number
+            if telegram._ac_number == self.ac_number:
                 copy_class_attrs(telegram, self)
                 self.call_device_updated()
         else:

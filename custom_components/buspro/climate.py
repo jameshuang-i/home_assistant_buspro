@@ -182,7 +182,7 @@ class BusproClimate(ClimateEntity):
             if self._device.mode:
                 return MODE_TRANSLATE[self._device.mode.value]
             else:
-                 _LOGGER.error(f"Not supported the hvac mode: {self._device._mode}, return Auto default.")
+                _LOGGER.error(f"Not supported the hvac mode: {self._device._mode}, return Auto default.")
                 return HVACMode.AUTO
         else:
             return HVACMode.OFF
@@ -237,6 +237,6 @@ class BusproClimate(ClimateEntity):
         """Turn the entity on."""
         await self._device.async_turn_on()
     
-     async def async_turn_off(self) -> None:
+    async def async_turn_off(self) -> None:
         """Turn the entity off."""
         await self._device.async_turn_off()
