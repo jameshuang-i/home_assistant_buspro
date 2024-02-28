@@ -42,7 +42,7 @@ class AirCondition(Device):
                 self.unregister_telegram_received_cb(self._telegram_received_control_status_cb, air_condition_status)
                 
                 logger.debug(f"air_condition_status = {air_condition_status}")
-                logger.debug(f"ReadAirConditionStatusResponseData = {telegrame}")
+                logger.debug(f"ReadAirConditionStatusResponseData = {telegram}")
                 control = ControlAirConditionData(self._device_address)
                 logger.debug(f"origin control = {control}")
                 copy_class_attrs(telegram, control)
@@ -116,7 +116,7 @@ class AirCondition(Device):
         logger.debug(f"Try to set AC mode: {mode}")
         control = ControlAirConditionData(self._device_address)
         control._mode = mode.value
-        control._status = OnOffStatus.ON
+        control._status = OnOffStatus.ON.value
         await self.control_status(control)
     
     async def async_set_target_temperature(self, temperature):
