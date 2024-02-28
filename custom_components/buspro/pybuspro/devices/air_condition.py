@@ -34,7 +34,7 @@ class AirCondition(Device):
                 copy_class_attrs(telegram, self)
                 self.call_device_updated()
         else:
-            logger.warning(f"Not supported message for operate type {telegram}")
+            logger.debug(f"Not supported message for operate type {telegram}")
 
     def _telegram_received_control_status_cb(self, telegram, air_condition_status:ControlAirConditionData):
         if isinstance(telegram, ReadAirConditionStatusResponseData):
