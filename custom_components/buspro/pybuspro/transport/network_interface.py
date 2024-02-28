@@ -43,7 +43,7 @@ class NetworkInterface:
 
     async def send_telegram(self, telegram):
         def _print_message(m):
-            ' '.join([format(x, '02x') for x in m])
+            return ' '.join([format(x, '02x') for x in m])
         logger.debug(f"Send Telegram: {telegram}")
         message = self._build_send_buffer(telegram)
         logger.debug(f"Send Message: {_print_message(message)}")

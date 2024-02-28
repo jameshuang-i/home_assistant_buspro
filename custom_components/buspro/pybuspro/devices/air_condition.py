@@ -40,11 +40,15 @@ class AirCondition(Device):
         if isinstance(telegram, ReadAirConditionStatusResponseData):
             if telegram._ac_number == self.ac_number:
                 self.unregister_telegram_received_cb(self._telegram_received_control_status_cb, air_condition_status)
-
+                
+                logger.debug(f"air_condition_status = {air_condition_status}")
+                logger.debug(f"ReadAirConditionStatusResponseData = {telegrame}")
                 control = ControlAirConditionData(self._device_address)
+                logger.debug(f"origin control = {control}")
                 copy_class_attrs(telegram, control)
+                logger.debug(f"refresh control = {control}")
                 copy_class_attrs(air_condition_status, control)
-                logger.debug(f"Trying to control the floor heating to {control}")
+                logger.debug(f"Trying to control the air condition to {control}")
                 
                 async def _send_control_air_condition_status(buspro, control):
                     await buspro.send_telegram(control)
@@ -109,8 +113,10 @@ class AirCondition(Device):
         await self.control_status(control)
     
     async def async_set_mode(self, mode:AirConditionMode):
+        logger.debug(f"Try to set AC mode: {mode}")
         control = ControlAirConditionData(self._device_address)
         control._mode = mode.value
+        control._status = OnOffStatus.ON
         await self.control_status(control)
     
     async def async_set_target_temperature(self, temperature):
