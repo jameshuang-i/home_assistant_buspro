@@ -15,15 +15,8 @@ class Telegram:
 
     def __str__(self):
         """Return object as readable string."""
-
-        return json.JSONEncoder().encode([
-            {"name": "source_address", "value": self.source_address},
-            {"name": "source_device_type", "value": str(self.source_device_type)},
-            {"name": "target_address", "value": self.target_address},
-            {"name": "operate_code", "value": str(self.operate_code)},
-            {"name": "payload", "value": self.payload},
-            {"name": "crc", "value": str(self.crc)},
-        ])
+        _dict = vars(self)
+        return json.JSONEncoder().encode(_dict)
 
     def __eq__(self, other):
         """Equal operator."""
