@@ -1,6 +1,6 @@
 ﻿import json
 import inspect
-from .enums import DeviceType, OperateCode
+from .enums import DeviceType, OperateCode, BaseEnum
 
 
 # DTO class
@@ -16,7 +16,16 @@ class Telegram:
     def __str__(self):
         """Return object as readable string."""
         _dict = vars(self)
-        return json.JSONEncoder().encode(_dict)
+
+        def _enum_encoder(obj):
+            if isinstance(obj, BaseEnum):
+                return obj.name
+            try:
+                return obj.__dict__
+            except AttributeError:
+                return str(obj)
+                
+        return json.JSONEncoder(default=_enum_encoder).encode(_dict)
 
     def __eq__(self, other):
         """Equal operator."""
