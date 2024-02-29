@@ -15,7 +15,7 @@ from homeassistant.components.climate.const import (ClimateEntityFeature, FAN_AU
 from homeassistant.const import (CONF_NAME, CONF_DEVICES, CONF_ADDRESS, ATTR_TEMPERATURE, UnitOfTemperature,)
 from homeassistant.core import callback, HomeAssistant
 from ..buspro import DATA_BUSPRO
-from .pybuspro.enums import OnOffStatus, PresetMode, TemperatureType, AirConditionMode
+from .pybuspro.enums import OnOffStatus, PresetMode, TemperatureType, AirConditionMode, FanMode
 from .pybuspro.helpers import parse_device_address
 from .pybuspro.devices import AirCondition
 

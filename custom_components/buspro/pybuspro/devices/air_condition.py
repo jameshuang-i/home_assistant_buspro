@@ -44,9 +44,7 @@ class AirCondition(Device):
                 logger.debug(f"air_condition_status = {air_condition_status}")
                 logger.debug(f"ReadAirConditionStatusResponseData = {telegram}")
                 control = ControlAirConditionData(self._device_address)
-                logger.debug(f"origin control = {control}")
                 copy_class_attrs(telegram, control)
-                logger.debug(f"refresh control = {control}")
                 copy_class_attrs(air_condition_status, control)
                 logger.debug(f"Trying to control the air condition to {control}")
                 
