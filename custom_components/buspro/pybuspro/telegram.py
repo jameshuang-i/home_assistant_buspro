@@ -24,7 +24,7 @@ class Telegram:
                 return obj.__dict__
             except AttributeError:
                 return str(obj)
-                
+
         return json.JSONEncoder(default=_enum_encoder).encode(_dict)
 
     def __eq__(self, other):
@@ -288,6 +288,7 @@ class ReadAirConditionStatusResponseData(Telegram):
         self._heat_temperature = None
         self._auto_temperature = None
         self._dry_temperature = None
+        self._bit_7 = None
         self._status = None # 0-OFF, 1-ON
         self._mode = None # 0-COOL, 1-Heat, 2-FAN, 3-Auto, 4-Dry
         self._fan = None # 0-Auto, 1-High, 2-Medium, 3-Low
