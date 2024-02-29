@@ -90,7 +90,7 @@ class BusproClimate(ClimateEntity):
         """Return the list of supported features."""
         support  = ClimateEntityFeature.TARGET_TEMPERATURE 
         if self._type == "ac":
-            support |= ClimateEntityFeature.TARGET_HUMIDITY 
+            # support |= ClimateEntityFeature.TARGET_HUMIDITY 
             support |= ClimateEntityFeature.FAN_MODE 
             # 老板本中没有这两个
             # support |= ClimateEntityFeature.TURN_OFF 
@@ -124,7 +124,7 @@ class BusproClimate(ClimateEntity):
         target_temperature = int(temperature)
         _LOGGER.debug(f"Setting target temperature to {target_temperature}")
 
-        await self._device.async_set_target_temperature(temperature)
+        await self._device.async_set_target_temperature(target_temperature)
 
     @property
     def target_temperature_step(self):
