@@ -127,8 +127,9 @@ class AirCondition(Device):
             control._auto_temperature = temperature
         elif self.mode == AirConditionMode.Dry:
             control._dry_temperature = temperature
-        else: # 还有一个fan模式
-            control._auto_temperature = temperature # 随便取一个
+        # else: # 还有一个fan模式
+        #     control._auto_temperature = temperature # 随便取一个
+        control._set_temperature = temperature       
 
         await self.control_status(control)
     

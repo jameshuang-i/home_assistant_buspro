@@ -292,7 +292,7 @@ class ReadAirConditionStatusResponseData(Telegram):
         self._status = None # 0-OFF, 1-ON
         self._mode = None # 0-COOL, 1-Heat, 2-FAN, 3-Auto, 4-Dry
         self._fan = None # 0-Auto, 1-High, 2-Medium, 3-Low
-        self._temperature = None # 不清楚指定的是什么温度
+        self._set_temperature = None # 不清楚指定的是什么温度
         self._bit_12 = None # 都是00
 
 class ControlAirConditionData(Telegram):
@@ -310,7 +310,7 @@ class ControlAirConditionData(Telegram):
         self._status = None
         self._mode = None
         self._fan = None
-        self._bit_11 = 0
+        self._set_temperature = None
         self._bit_12 = 0
 class ControlAirConditionResponseData(Telegram):
     def __init__(self, device_address):
@@ -327,5 +327,5 @@ class ControlAirConditionResponseData(Telegram):
         self._status = None
         self._mode = None
         self._fan = None
-        self._bit_11 = None
+        self._set_temperature = None
         self._bit_12 = None
