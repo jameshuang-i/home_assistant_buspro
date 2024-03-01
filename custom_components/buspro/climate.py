@@ -191,7 +191,8 @@ class BusproClimate(ClimateEntity):
     @property
     def hvac_modes(self) -> Optional[List[str]]:
         """Return the list of available operation modes."""
-        return MODE_TRANSLATE + [HVACMode.OFF]
+        # 我的设置不支持自动模式
+        return [mode for mode in MODE_TRANSLATE if mode!=HVACMode.AUTO] + [HVACMode.OFF]
 
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         """Set operation mode."""
@@ -222,7 +223,8 @@ class BusproClimate(ClimateEntity):
         """Return the list of available fan modes.
         Requires ClimateEntityFeature.FAN_MODE.
         """
-        return FAN_MODE_TRANSLATE
+        # 我的设备不支持自动风
+        return [fan for fan in FAN_MODE_TRANSLATE if fan!=FAN_AUTO] 
     
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
