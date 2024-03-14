@@ -11,15 +11,15 @@ class AirCondition(Device):
     def __init__(self, buspro, device_address, ac_number):
         super().__init__(buspro, device_address)
         self.ac_number = ac_number
-        self._temperature_type = None # 0-C, 1-F
+        self._temperature_type = 0 # 0-C, 1-F
         self._current_temperature = None
         self._cool_temperature = None
         self._heat_temperature = None
         self._auto_temperature = None
         self._dry_temperature = None
-        self._status = None # 0-OFF, 1-ON
-        self._mode = None # 0-COOL, 1-Heat, 2-FAN, 3-Auto, 4-Dry
-        self._fan = None # 0-Auto, 1-High, 2-Medium, 3-Low
+        self._status = 0 # 0-OFF, 1-ON
+        self._mode = 3 # 0-COOL, 1-Heat, 2-FAN, 3-Auto, 4-Dry
+        self._fan = 0 # 0-Auto, 1-High, 2-Medium, 3-Low
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_air_condition_status(run_from_init=True)
