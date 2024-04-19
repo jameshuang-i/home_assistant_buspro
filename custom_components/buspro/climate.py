@@ -17,7 +17,10 @@ from homeassistant.core import callback, HomeAssistant
 from ..buspro import DATA_BUSPRO
 from .pybuspro.enums import OnOffStatus, PresetMode, TemperatureType, AirConditionMode, FanMode
 from .pybuspro.helpers import parse_device_address
-from .pybuspro.devices import AirCondition
+from .pybuspro.devices import AirCondition, FloorHeating
+
+FLOORHEATING = "heating"
+AIRCONDITION = "ac"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +28,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_DEVICES): {
         cv.string: vol.Schema({
             vol.Required(CONF_NAME): cv.string,
-            vol.Optional("type", default="ac"): cv.string,
+            vol.Optional("type", default=AIRCONDITION): cv.string,
         })
     },
 })
@@ -51,8 +54,13 @@ class BusproClimate(ClimateEntity):
         self._name:str = device_config[CONF_NAME]
         self._type = device_config['type']
 
-        device_address, ac_number = parse_device_address(key)
-        self._device:AirCondition = AirCondition(self._hass.data[DATA_BUSPRO].hdl, device_address, ac_number)
+        device_address, number = parse_device_address(key)
+        if self._type==AIRCONDITION:
+            self._device:AirCondition = AirCondition(self._hass.data[DATA_BUSPRO].hdl, device_address, number)
+        elif self._type==FLOORHEATING:
+            self._device:FloorHeating = FloorHeating(self._hass.data[DATA_BUSPRO].hdl, device_address)
+        else:
+            _LOGGER.error(f"Not supported the climate device type: {self._type}.")
 
         self.async_register_callbacks()
 
@@ -89,7 +97,7 @@ class BusproClimate(ClimateEntity):
     def supported_features(self):
         """Return the list of supported features."""
         support  = ClimateEntityFeature.TARGET_TEMPERATURE 
-        if self._type == "ac":
+        if self._type == AIRCONDITION:
             # support |= ClimateEntityFeature.TARGET_HUMIDITY 
             support |= ClimateEntityFeature.FAN_MODE 
             # 老板本中没有这两个
@@ -192,7 +200,12 @@ class BusproClimate(ClimateEntity):
     def hvac_modes(self) -> Optional[List[str]]:
         """Return the list of available operation modes."""
         # 我的设置不支持自动模式
-        return [mode for mode in MODE_TRANSLATE if mode!=HVACMode.AUTO] + [HVACMode.OFF]
+        if self._type==AIRCONDITION:
+            return [mode for mode in MODE_TRANSLATE if mode!=HVACMode.AUTO] + [HVACMode.OFF]
+        elif self._type==FLOORHEATING:
+            return [HVACMode.HEAT, HVACMode.OFF]
+        else:
+            _LOGGER.error(f"Not supported the climate type: {self._type}.")
 
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         """Set operation mode."""
@@ -224,7 +237,12 @@ class BusproClimate(ClimateEntity):
         Requires ClimateEntityFeature.FAN_MODE.
         """
         # 我的设备不支持自动风
-        return [fan for fan in FAN_MODE_TRANSLATE if fan!=FAN_AUTO] 
+        if self._type==AIRCONDITION:
+            return [fan for fan in FAN_MODE_TRANSLATE if fan!=FAN_AUTO] 
+        elif self._type==FLOORHEATING:
+            return None
+        else:
+            _LOGGER.error(f"Not supported the climate type: {self._type}.")
     
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""

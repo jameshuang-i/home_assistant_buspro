@@ -3,7 +3,7 @@ import logging
 from ..telegram import Telegram, ReadFloorHeatingStatusData, ReadFloorHeatingStatusResponseData, ControlFloorHeatingStatusData, ControlFloorHeatingStatusResponseData, BroadcastTemperatureResponseData
 from .device import Device
 from ..helpers import copy_class_attrs
-from ..enums import *
+from ..enums import AirConditionMode, TemperatureType, OnOffStatus, PresetMode, AirConditionMode, FanMode
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +78,11 @@ class FloorHeating(Device):
         return mode if mode else PresetMode.none
 
     @property
+    def mode(self):
+        """工作模式，只有heating"""
+        return AirConditionMode.Heat
+
+    @property
     def current_temperature(self):
         return self._current_temperature
 
@@ -118,3 +123,16 @@ class FloorHeating(Device):
         else:
             control._normal_temperature = temperature
         await self.control_heating_status(control)
+    
+    async def async_set_mode(self, mode:AirConditionMode):
+        """Do nothing"""
+        pass
+
+    @property
+    def fan_mode(self):
+        """没有fan_mode, 随便返回一个"""
+        return FanMode.Auto
+
+    async def async_set_fan_mode(self, fan_mode:FanMode):
+        """Do nothing"""
+        pass
