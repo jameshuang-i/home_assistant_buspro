@@ -31,19 +31,19 @@ class FloorHeating(Device):
     def _update(self, op_code, data, number):
         if number == self._number:
             operate = DLPOperateCode.value_of(op_code)
-            if op_code == DLPOperateCode.status:
+            if operate == DLPOperateCode.status:
                 self._status = data
-            elif op_code == DLPOperateCode.mode:
+            elif operate == DLPOperateCode.mode:
                 self._mode = data
-            elif op_code == DLPOperateCode.lock:
+            elif operate == DLPOperateCode.lock:
                 pass
-            elif op_code == DLPOperateCode.temperature_normal:
+            elif operate == DLPOperateCode.temperature_normal:
                 self._temperature_normal = data
-            elif op_code == DLPOperateCode.temperature_day:
+            elif operate == DLPOperateCode.temperature_day:
                 self._temperature_day = data
-            elif op_code == DLPOperateCode.temperature_night:
+            elif operate == DLPOperateCode.temperature_night:
                 self._temperature_night = data
-            elif op_code == DLPOperateCode.temperature_away:
+            elif operate == DLPOperateCode.temperature_away:
                 self._temperature_away = data
             else:
                 logger.debug(f"Not supported DLP operate type {op_code}")
