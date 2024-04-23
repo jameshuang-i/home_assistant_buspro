@@ -26,7 +26,7 @@ class FloorHeating(Device):
             self._update(telegram._dlp_operate_code, telegram._data, telegram._number)
             self.call_device_updated()
         else:
-            logger.warning(f"Not supported message for operate type {telegram.operate_code.name}")
+            logger.debug(f"Not supported message for operate type {telegram}")
 
     def _update(self, op_code, data, number):
         if number == self._number:
@@ -46,7 +46,7 @@ class FloorHeating(Device):
             elif op_code == DLPOperateCode.temperature_away:
                 self._temperature_away = data
             else:
-                logger.warning(f"Not supported DLP operate type {op_code}")
+                logger.debug(f"Not supported DLP operate type {op_code}")
 
     async def async_read_floor_heating(self, operate):
         control = ReadDLPStatusData(self._device_address)
