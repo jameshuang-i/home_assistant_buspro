@@ -22,7 +22,7 @@ class FloorHeating(Device):
         self.call_read_current_heating_status(run_from_init=True)
 
     def _telegram_received_cb(self, telegram, postfix=None):
-        if isinstance(telegram, (ReadDLPStatusData, ControlDLPStatusResponseData)):
+        if isinstance(telegram, (ReadDLPStatusResponseData, ControlDLPStatusResponseData)):
             self._update(telegram._dlp_operate_code, telegram._data, telegram._number)
             self.call_device_updated()
         else:
