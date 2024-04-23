@@ -75,7 +75,8 @@ class Telegram:
             member_dict = vars(control)
             for member in member_dict.keys():
                 if member.startswith("_") and member != "_payload":
-                    member_dict[member] = control._payload[index]
+                    if index < len(control._payload):
+                        member_dict[member] = control._payload[index]
                     index += 1
         
         return control if control else self

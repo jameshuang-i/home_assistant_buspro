@@ -56,7 +56,7 @@ class FloorHeating(Device):
         await self._buspro.send_telegram(control)
 
     async def async_control_floor_heating(self, operate, data):
-        control = ReadDLPStatusData(self._device_address)
+        control = ControlDLPStatusData(self._device_address)
         control._dlp_operate_code = operate.value
         control._data = data
         control._number = self._number
@@ -69,13 +69,12 @@ class FloorHeating(Device):
         if run_from_init:
             await asyncio.sleep(5)
 
-        control = ReadFloorHeatingStatusData(self._device_address)
-        await async_read_floor_heating(DLPOperateCode.status)
-        await async_read_floor_heating(DLPOperateCode.mode)
-        await async_read_floor_heating(DLPOperateCode.temperature_normal)
-        await async_read_floor_heating(DLPOperateCode.temperature_day)
-        await async_read_floor_heating(DLPOperateCode.temperature_night)
-        await async_read_floor_heating(DLPOperateCode.temperature_away)
+        await self.async_read_floor_heating(DLPOperateCode.status)
+        await self.async_read_floor_heating(DLPOperateCode.mode)
+        await self.async_read_floor_heating(DLPOperateCode.temperature_normal)
+        await self.async_read_floor_heating(DLPOperateCode.temperature_day)
+        await self.async_read_floor_heating(DLPOperateCode.temperature_night)
+        await self.async_read_floor_heating(DLPOperateCode.temperature_away)
 
     async def async_turn_off(self):
         await self.async_control_floor_heating(DLPOperateCode.status, OnOffStatus.OFF.value)
