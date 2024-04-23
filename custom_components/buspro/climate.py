@@ -208,8 +208,7 @@ class BusproClimate(ClimateEntity):
         if self._type==AIRCONDITION:
             return [mode for mode in MODE_TRANSLATE if mode!=HVACMode.AUTO] + [HVACMode.OFF]
         elif self._type==FLOORHEATING:
-            # return [HVACMode.HEAT, HVACMode.OFF]
-            return [HVACMode.OFF]
+            return [HVACMode.HEAT, HVACMode.OFF]
         else:
             _LOGGER.error(f"Not supported the climate type: {self._type}.")
 

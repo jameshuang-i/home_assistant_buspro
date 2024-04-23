@@ -12,7 +12,7 @@ class FloorHeating(Device):
         self._number = number
         self._status = None             # On/Off
         self._mode = None               # 1/2/3/4/5 (Normal/Day/Night/Away/Timer)
-        self._temperature = None
+        self._temperature = 0           # 默认 0
         self._temperature_normal = None
         self._temperature_day = None
         self._temperature_night = None
