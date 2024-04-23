@@ -329,3 +329,33 @@ class ControlAirConditionResponseData(Telegram):
         self._fan = None
         self._set_temperature = None
         self._bit_12 = None
+
+class ControlDLPStatusData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ControlDLPStatus
+        self._dlp_operate_code = None
+        self._data = None
+        self._number = None
+class ControlDLPStatusResponseData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ControlDLPStatusResponse
+        self._dlp_operate_code = None
+        self._data = None
+        self._number = None
+class ReadDLPStatusData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ReadDLPStatus
+        self._dlp_operate_code = None
+        self._data = None
+        self._number = None
+class ReadDLPStatusResponseData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ReadDLPStatusResponse
+        self._dlp_operate_code = None
+        self._data = None
+        self._number = None
+

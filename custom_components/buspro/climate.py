@@ -58,7 +58,7 @@ class BusproClimate(ClimateEntity):
         if self._type==AIRCONDITION:
             self._device:AirCondition = AirCondition(self._hass.data[DATA_BUSPRO].hdl, device_address, number)
         elif self._type==FLOORHEATING:
-            self._device:FloorHeating = FloorHeating(self._hass.data[DATA_BUSPRO].hdl, device_address)
+            self._device:FloorHeating = FloorHeating(self._hass.data[DATA_BUSPRO].hdl, device_address, number)
         else:
             _LOGGER.error(f"Not supported the climate device type: {self._type}.")
 
@@ -139,31 +139,34 @@ class BusproClimate(ClimateEntity):
         """Return the supported step of target temperature."""
         return 1
 
-    # @property
-    # def preset_mode(self) -> Optional[str]:
-    #     """Return the current preset mode, e.g., home, away, temp.
-    #     """
-    #     return self._device.preset_mode
+    @property
+    def preset_mode(self) -> Optional[str]:
+        """Return the current preset mode, e.g., home, away, temp.
+        """
+        if self._type == FLOORHEATING:
+            return self._device.preset_mode
 
-    # @property
-    # def preset_modes(self) -> Optional[List[str]]:
-    #     """Return a list of available preset modes.
-    #     Requires SUPPORT_PRESET_MODE.
-    #     """
-    #     return self._preset_modes
+    @property
+    def preset_modes(self) -> Optional[List[str]]:
+        """Return a list of available preset modes.
+        Requires SUPPORT_PRESET_MODE.
+        """
+        if self._type == FloorHeating:
+            return list(PresetMode__members__.keys())
 
-    # async def async_set_preset_mode(self, preset_mode: str) -> None:
-    #     """Set new preset mode."""
-    #     mode = None
-    #     for p in PresetMode:
-    #         if p.name == preset_mode:
-    #             mode = p
-    #             break
-    #     if mode:
-    #         _LOGGER.debug(f"Setting preset mode to '{mode}' for device '{self._name}'")
-    #         await self._device.async_set_preset_mode(mode)
-    #     else:
-    #         _LOGGER.error(f"Not supported the preset mode '{preset_mode}'")
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set new preset mode."""
+        if self._type == FloorHeating:
+            mode = None
+            for p in PresetMode:
+                if p.name == preset_mode:
+                    mode = p
+                    break
+            if mode:
+                _LOGGER.debug(f"Setting preset mode to '{mode}' for device '{self._name}'")
+                await self._device.async_set_preset_mode(mode)
+            else:
+                _LOGGER.error(f"Not supported the preset mode '{preset_mode}'")
 
     @property
     def hvac_action(self) -> Optional[str]:
@@ -225,11 +228,11 @@ class BusproClimate(ClimateEntity):
         """Return the fan setting.
         Requires ClimateEntityFeature.FAN_MODE.
         """
-        if self._device.fan_mode:
-            return FAN_MODE_TRANSLATE[self._device.fan_mode.value]
-        else:
-            _LOGGER.error(f"Unrecognized fan mode: {self._device._fan}")
-            return
+        if self._type == AIRCONDITION:
+            if self._device.fan_mode:
+                return FAN_MODE_TRANSLATE[self._device.fan_mode.value]
+            else:
+                _LOGGER.error(f"Unrecognized fan mode: {self._device._fan}")
 
     @property
     def fan_modes(self) -> list[str] | None:
@@ -246,13 +249,14 @@ class BusproClimate(ClimateEntity):
     
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
-        for index in range(len(FAN_MODE_TRANSLATE)):
-            if FAN_MODE_TRANSLATE[index] == fan_mode:
-                break
-        else:
-            _LOGGER.error("Unrecognized fan mode: %s", fan_mode)
-            return None
-        await self._device.async_set_fan_mode(FanMode.value_of(index)) 
+        if self._type==AIRCONDITION:
+            for index in range(len(FAN_MODE_TRANSLATE)):
+                if FAN_MODE_TRANSLATE[index] == fan_mode:
+                    break
+            else:
+                _LOGGER.error("Unrecognized fan mode: %s", fan_mode)
+                return None
+            await self._device.async_set_fan_mode(FanMode.value_of(index)) 
     
     async def async_turn_on(self) -> None:
         """Turn the entity on."""

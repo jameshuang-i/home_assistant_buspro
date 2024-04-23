@@ -84,6 +84,15 @@ class FanMode(BaseEnum):
     Medium = 2
     Low = 3
 
+class DLPOperateCode(BaseEnum):
+    status = 0x14
+    mode = 0x15
+    lock = 0x18
+    temperature_normal = 0x19
+    temperature_day = 0x1a
+    temperature_night = 0x1b
+    temperature_away = 0x1c
+
 class OperateCode(BaseEnum):
     NotSet = b'\x00'
 
@@ -123,6 +132,12 @@ class OperateCode(BaseEnum):
     ControlAirCondition = b'\x19\x3A'
     ControlAirConditionResponse = b'\x19\x3B'
 
+    # DLP
+    ReadDLPStatus = b'\xE3\xDA'
+    ReadDLPStatusResponse = b'\xE3\xDB'
+    ControlDLPStatus = b'\xE3\xD8'
+    ControlDLPStatusResponse = b'\xE3\xD9'
+
     """
     # 
     # 
@@ -156,6 +171,8 @@ class OperateCode(BaseEnum):
     # b'\x19\x48' Temperature request?
     # b'\x19\x49' Temperature request?
     # b'\xE3\xE5' GPRS control answer back
+    
+
 
     QUERY_12in1_FROM_SETUP_TOOL_1 = b'\x00\x0E'
     RESPONSE_QUERY_12in1_FROM_SETUP_TOOL_1 = b'\x00\x0F'

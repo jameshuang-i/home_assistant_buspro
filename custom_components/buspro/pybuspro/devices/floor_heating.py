@@ -1,67 +1,105 @@
 import asyncio
 import logging
-from ..telegram import Telegram, ReadFloorHeatingStatusData, ReadFloorHeatingStatusResponseData, ControlFloorHeatingStatusData, ControlFloorHeatingStatusResponseData, BroadcastTemperatureResponseData
+from ..telegram import Telegram, ReadDLPStatusData, ReadDLPStatusResponseData, ControlDLPStatusData, ControlDLPStatusResponseData
 from .device import Device
-from ..helpers import copy_class_attrs
-from ..enums import AirConditionMode, TemperatureType, OnOffStatus, PresetMode, AirConditionMode, FanMode
+from ..enums import AirConditionMode, OnOffStatus, PresetMode, DLPOperateCode, TemperatureType
 
 logger = logging.getLogger(__name__)
 
 class FloorHeating(Device):
     def __init__(self, buspro, device_address):
-        super().__init__(buspro, device_address)
-        self._temperature_type = None   # Celsius/Fahrenheit
+        super().__init__(buspro, device_address, number)
+        self._number = number
         self._status = None             # On/Off
         self._mode = None               # 1/2/3/4/5 (Normal/Day/Night/Away/Timer)
-        self._current_temperature = None
-        self._normal_temperature = None
-        self._day_temperature = None
-        self._night_temperature = None
-        self._away_temperature = None
+        self._temperature = None
+        self._temperature_normal = None
+        self._temperature_day = None
+        self._temperature_night = None
+        self._temperature_away = None
 
         self.register_telegram_received_cb(self._telegram_received_cb)
         self.call_read_current_heating_status(run_from_init=True)
 
     def _telegram_received_cb(self, telegram, postfix=None):
-        if isinstance(telegram, ReadFloorHeatingStatusResponseData):
-            copy_class_attrs(telegram, self)
-            self.call_device_updated()
-        elif isinstance(telegram, ControlFloorHeatingStatusResponseData):
-            if telegram._success == SuccessOrFailure.Success:
-                copy_class_attrs(telegram, self)
-                self.call_device_updated()
-        elif isinstance(telegram, BroadcastTemperatureResponseData):
-            copy_class_attrs(telegram, self)
+        if isinstance(telegram, (ReadDLPStatusData, ControlDLPStatusResponseData)):
+            self._update(telegram._dlp_operate_code, telegram._data, telegram._number)
             self.call_device_updated()
         else:
             logger.warning(f"Not supported message for operate type {telegram.operate_code.name}")
 
-    def _telegram_received_control_heating_status_cb(self, telegram, floor_heating_status:ControlFloorHeatingStatusData):
-        if isinstance(telegram, ReadFloorHeatingStatusResponseData):
-            self.unregister_device_updated_cb(self._telegram_received_control_heating_status_cb, floor_heating_status)
+    def _update(self, op_code, data, number):
+        if number == self._number:
+            operate = DLPOperateCode.value_of(op_code)
+            if op_code == DLPOperateCode.status:
+                self._status = data
+            elif op_code == DLPOperateCode.mode:
+                self._mode = data
+            elif op_code == DLPOperateCode.lock:
+                pass
+            elif op_code == DLPOperateCode.temperature_normal:
+                self._temperature_normal = data
+            elif op_code == DLPOperateCode.temperature_day:
+                self._temperature_day = data
+            elif op_code == DLPOperateCode.temperature_night:
+                self._temperature_night = data
+            elif op_code == DLPOperateCode.temperature_away:
+                self._temperature_away = data
+            else:
+                logger.warning(f"Not supported DLP operate type {op_code}")
 
-            control = ControlFloorHeatingStatusData(self._device_address)
-            copy_class_attrs(control, telegram)
-            copy_class_attrs(floor_heating_status, control)
-            logger.debug(f"Trying to control the floor heating to {control}")
-            
-            async def _send_control_floor_heating_status(buspro, control):
-                await buspro.send_telegram(control)
-            asyncio.ensure_future(_send_control_floor_heating_status(self._buspro, control), loop=self._buspro.loop)
+    async def async_read_floor_heating(self, operate):
+        control = ReadDLPStatusData(self._device_address)
+        control._dlp_operate_code = operate.value
+        control._data = self._number
+        control._number = self._number
+        await self._buspro.send_telegram(control)
 
-    async def control_heating_status(self, floor_heating_status: ControlFloorHeatingStatusData):
-        self.register_telegram_received_cb(self._telegram_received_control_heating_status_cb, floor_heating_status)
-        await self._read_current_heating_status()
+    async def async_control_floor_heating(self, operate, data):
+        control = ReadDLPStatusData(self._device_address)
+        control._dlp_operate_code = operate.value
+        control._data = data
+        control._number = self._number
+        await self._buspro.send_telegram(control)
 
     def call_read_current_heating_status(self, run_from_init=False):      
         asyncio.ensure_future(self._read_current_heating_status(run_from_init), loop=self._buspro.loop)
-
+    
     async def _read_current_heating_status(self, run_from_init=False):
         if run_from_init:
             await asyncio.sleep(5)
 
         control = ReadFloorHeatingStatusData(self._device_address)
-        await self._buspro.send_telegram(control)
+        await async_read_floor_heating(DLPOperateCode.status)
+        await async_read_floor_heating(DLPOperateCode.mode)
+        await async_read_floor_heating(DLPOperateCode.temperature_normal)
+        await async_read_floor_heating(DLPOperateCode.temperature_day)
+        await async_read_floor_heating(DLPOperateCode.temperature_night)
+        await async_read_floor_heating(DLPOperateCode.temperature_away)
+
+    async def async_turn_off(self):
+        await self.async_control_floor_heating(DLPOperateCode.status, OnOffStatus.OFF.value)
+
+    async def async_turn_on(self):
+        await self.async_control_floor_heating(DLPOperateCode.status, OnOffStatus.ON.value)
+    
+    async def async_set_preset_mode(self, mode:PresetMode):
+        await self.async_control_floor_heating(DLPOperateCode.mode, mode.value)
+    
+    async def async_set_target_temperature(self, temperature):
+        operate = DLPOperateCode.temperature_normal
+        if self.preset_mode == PresetMode.home:
+            operate = DLPOperateCode.temperature_day
+        elif self.preset_mode == PresetMode.away:
+            operate = DLPOperateCode.temperature_away
+        elif self.preset_mode == PresetMode.sleep:
+             operate = DLPOperateCode.temperature_night
+      
+        await self.async_control_floor_heating(operate, temperature)
+    
+    async def async_set_mode(self, mode:AirConditionMode):
+        """Do nothing"""
+        pass
 
     @property
     def is_on(self):
@@ -69,7 +107,7 @@ class FloorHeating(Device):
 
     @property
     def unit_of_measurement(self):
-        return TemperatureType.value_of(self._temperature_type)
+        return TemperatureType.Celsius
 
     @property
     def preset_mode(self):
@@ -79,60 +117,20 @@ class FloorHeating(Device):
 
     @property
     def mode(self):
-        """工作模式，只有heating"""
+        """工作模式, 只有heating"""
         return AirConditionMode.Heat
 
     @property
     def current_temperature(self):
-        return self._current_temperature
+        return self._temperature
 
     @property
     def target_temperature(self):
         if self.preset_mode == PresetMode.home:
-            return self._day_temperature
+            return self._temperature_day
         elif self.preset_mode == PresetMode.away:
-            return self._away_temperature
+            return self._temperature_away
         elif self.preset_mode == PresetMode.sleep:
-            return self._night_temperature
+            return self._temperature_night
         else:
-            return self._normal_temperature
-
-    async def async_turn_on(self):
-        control = ControlFloorHeatingStatusData(self._device_address)
-        control._status = OnOffStatus.ON.value
-        await self.control_heating_status(control)
-    
-    async def async_turn_off(self):
-        control = ControlFloorHeatingStatusData(self._device_address)
-        control._status = OnOffStatus.OFF.value
-        await self.control_heating_status(control)
-    
-    async def async_set_preset_mode(self, mode:PresetMode):
-        control = ControlFloorHeatingStatusData(self._device_address)
-        control._mode = mode.value
-        await self.control_heating_status(control)
-    
-    async def async_set_target_temperature(self, temperature):
-        control = ControlFloorHeatingStatusData(self._device_address)
-        if self.preset_mode == PresetMode.home:
-            control._day_temperature = temperature
-        elif self.preset_mode == PresetMode.away:
-            control._away_temperature = temperature
-        elif self.preset_mode == PresetMode.sleep:
-            control._night_temperature = temperature
-        else:
-            control._normal_temperature = temperature
-        await self.control_heating_status(control)
-    
-    async def async_set_mode(self, mode:AirConditionMode):
-        """Do nothing"""
-        pass
-
-    @property
-    def fan_mode(self):
-        """没有fan_mode, 随便返回一个"""
-        return FanMode.Auto
-
-    async def async_set_fan_mode(self, fan_mode:FanMode):
-        """Do nothing"""
-        pass
+            return self._temperature_normal
