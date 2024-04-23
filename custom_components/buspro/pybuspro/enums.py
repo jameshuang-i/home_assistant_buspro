@@ -15,7 +15,7 @@ class SuccessOrFailure(BaseEnum):
     Failure = b'\xF5'
 
 class PresetMode(BaseEnum):
-    none = 1
+    normal = 1
     home = 2
     sleep = 3
     away = 4

@@ -97,8 +97,7 @@ class FloorHeating(Device):
         await self.async_control_floor_heating(operate, temperature)
     
     async def async_set_mode(self, mode:AirConditionMode):
-        """Do nothing"""
-        pass
+        await self.async_turn_on()  # 直接打开地暖
 
     @property
     def is_on(self):
@@ -112,7 +111,7 @@ class FloorHeating(Device):
     def preset_mode(self):
         mode = PresetMode.value_of(self._mode)
         # HDL 中还有一个Timer的模式
-        return mode if mode else PresetMode.none
+        return mode if mode else PresetMode.normal
 
     @property
     def mode(self):

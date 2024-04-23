@@ -146,7 +146,7 @@ class BusproClimate(ClimateEntity):
         """Return the current preset mode, e.g., home, away, temp.
         """
         if self._type == FLOORHEATING:
-            return self._device.preset_mode
+            return self._device.preset_mode.name
 
     @property
     def preset_modes(self) -> Optional[List[str]]:
