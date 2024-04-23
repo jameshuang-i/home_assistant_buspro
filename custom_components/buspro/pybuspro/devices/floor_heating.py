@@ -7,8 +7,8 @@ from ..enums import AirConditionMode, OnOffStatus, PresetMode, DLPOperateCode, T
 logger = logging.getLogger(__name__)
 
 class FloorHeating(Device):
-    def __init__(self, buspro, device_address):
-        super().__init__(buspro, device_address, number)
+    def __init__(self, buspro, device_address, number):
+        super().__init__(buspro, device_address)
         self._number = number
         self._status = None             # On/Off
         self._mode = None               # 1/2/3/4/5 (Normal/Day/Night/Away/Timer)
