@@ -104,7 +104,7 @@ class BusproClimate(ClimateEntity):
             # support |= ClimateEntityFeature.TURN_OFF 
             # support |= ClimateEntityFeature.TURN_ON 
         elif self._type == FLOORHEATING:
-            support |= ClimateEntityFeature.SUPPORT_PRESET_MODE
+            support |= ClimateEntityFeature.PRESET_MODE
         return support
 
     @property
