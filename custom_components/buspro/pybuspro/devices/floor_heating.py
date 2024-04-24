@@ -1,8 +1,9 @@
 import asyncio
 import logging
-from ..telegram import Telegram, ReadDLPStatusData, ReadDLPStatusResponseData, ControlDLPStatusData, ControlDLPStatusResponseData
+from ..telegram import Telegram, ReadDLPStatusData, ReadDLPStatusResponseData, ControlDLPStatusData, ControlDLPStatusResponseData, ControlFloorHeatingResponseData
 from .device import Device
 from ..enums import AirConditionMode, OnOffStatus, PresetMode, DLPOperateCode, TemperatureType
+from ..helpers import copy_class_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ class FloorHeating(Device):
         self._number = number
         self._status = None             # On/Off
         self._mode = None               # 1/2/3/4/5 (Normal/Day/Night/Away/Timer)
-        self._temperature = 0           # 默认 0
+        self._temperature = None
         self._temperature_normal = None
         self._temperature_day = None
         self._temperature_night = None
@@ -25,6 +26,9 @@ class FloorHeating(Device):
         if isinstance(telegram, (ReadDLPStatusResponseData, ControlDLPStatusResponseData)):
             self._update(telegram._dlp_operate_code, telegram._data, telegram._number)
             self.call_device_updated()
+        elif isinstance(telegram, ControlFloorHeatingResponseData):
+            if telegram._number == self._number:
+                copy_class_attrs(telegram, self)
         else:
             logger.debug(f"Not supported message for operate type {telegram}")
 
@@ -87,11 +91,11 @@ class FloorHeating(Device):
     
     async def async_set_target_temperature(self, temperature):
         operate = DLPOperateCode.temperature_normal
-        if self.preset_mode == PresetMode.home:
+        if self.preset_mode == PresetMode.Day:
             operate = DLPOperateCode.temperature_day
-        elif self.preset_mode == PresetMode.away:
+        elif self.preset_mode == PresetMode.Away:
             operate = DLPOperateCode.temperature_away
-        elif self.preset_mode == PresetMode.sleep:
+        elif self.preset_mode == PresetMode.Night:
              operate = DLPOperateCode.temperature_night
       
         await self.async_control_floor_heating(operate, temperature)
@@ -111,7 +115,7 @@ class FloorHeating(Device):
     def preset_mode(self):
         mode = PresetMode.value_of(self._mode)
         # HDL 中还有一个Timer的模式
-        return mode if mode else PresetMode.normal
+        return mode if mode else PresetMode.Normal
 
     @property
     def mode(self):
@@ -124,11 +128,11 @@ class FloorHeating(Device):
 
     @property
     def target_temperature(self):
-        if self.preset_mode == PresetMode.home:
+        if self.preset_mode == PresetMode.Day:
             return self._temperature_day
-        elif self.preset_mode == PresetMode.away:
+        elif self.preset_mode == PresetMode.Away:
             return self._temperature_away
-        elif self.preset_mode == PresetMode.sleep:
+        elif self.preset_mode == PresetMode.Night:
             return self._temperature_night
         else:
             return self._temperature_normal

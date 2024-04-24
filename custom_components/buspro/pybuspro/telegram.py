@@ -231,31 +231,6 @@ class BroadcastStatusOfUniversalSwitchData(Telegram):
     def get_switch_status(self, number):
         return self._payload[number] if number<self._switch_count else None
 
-class ControlFloorHeatingStatusData(Telegram):
-    def __init__(self, device_address):
-        super().__init__(device_address)
-        self.operate_code = OperateCode.ControlFloorHeatingStatus
-        self._temperature_type = None # 0 = C, 1 = F
-        self._status = None # 0 = OFF, 1 = ON
-        self._mode = None # 1 = Normal, 2 = Day , 3 = Night, 4 = Away, 5 = Timer
-        self._normal_temperature = None
-        self._day_temperature = None
-        self._night_temperature = None
-        self._away_temperature = None
-class ControlFloorHeatingStatusResponseData(Telegram):
-    def __init__(self, device_address):
-        super().__init__(device_address)
-        self.operate_code = OperateCode.ControlFloorHeatingStatusResponse
-        self._success = None
-        self._temperature_type = None # 0 = C, 1 = F
-        self._status = None # 0 = OFF, 1 = ON
-        self._mode = None # 1 = Normal, 2 = Day , 3 = Night, 4 = Away, 5 = Timer
-        self._normal_temperature = None
-        self._day_temperature = None
-        self._night_temperature = None
-        self._away_temperature = None
-        self._Timer = None # 0 = Day, 1 = Night
-
 class ReadFloorHeatingStatusData(Telegram):
     def __init__(self, device_address):
         super().__init__(device_address)
@@ -272,6 +247,18 @@ class ReadFloorHeatingStatusResponseData(Telegram):
         self._day_temperature = None
         self._night_temperature = None
         self._away_temperature = None
+class ControlFloorHeatingResponseData(Telegram):
+    def __init__(self, device_address):
+        super().__init__(device_address)
+        self.operate_code = OperateCode.ControlFloorHeatingResponse
+        self._number = None
+        self._status = None
+        self._temperature = None
+        self._mode = None
+        self.temperature_normal = None
+        self._temperature_day = None
+        self._temperature_night = None
+        self._temperature_away = None
 
 class ReadAirConditionStatusData(Telegram):
     def __init__(self, device_address):
@@ -359,4 +346,4 @@ class ReadDLPStatusResponseData(Telegram):
         self._dlp_operate_code = None
         self._data = None
         self._number = None
-
+        

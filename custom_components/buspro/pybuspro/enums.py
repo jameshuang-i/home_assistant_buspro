@@ -15,10 +15,11 @@ class SuccessOrFailure(BaseEnum):
     Failure = b'\xF5'
 
 class PresetMode(BaseEnum):
-    normal = 1
-    home = 2
-    sleep = 3
-    away = 4
+    Normal = 1
+    Day = 2
+    Night = 3
+    Away = 4
+    Timer = 5
 
 class DeviceType(BaseEnum):
     NotSet = b'\x00\x00'
@@ -48,28 +49,17 @@ class OnOff(BaseEnum):
     OFF = 0
     ON = 255
 
-
 class SwitchStatusOnOff(BaseEnum):
     OFF = 0
     ON = 1
-
 
 class OnOffStatus(BaseEnum):
     OFF = 0
     ON = 1
 
-
 class TemperatureType(BaseEnum):
     Celsius = 0
     Fahrenheit = 1
-
-
-class TemperatureMode(BaseEnum):
-    Normal = 1
-    Day = 2
-    Night = 3
-    Away = 4
-    Timer = 5
 
 class AirConditionMode(BaseEnum):
     Cool = 0
@@ -85,6 +75,14 @@ class FanMode(BaseEnum):
     Low = 3
 
 class DLPOperateCode(BaseEnum):
+    ar_status = 0x03
+    ar_temperature_cool = 0x04
+    ar_fan_speed = 0x05
+    ar_mode = 0x06
+    ar_temperature_heat = 0x07
+    ar_temperature_auto = 0x08
+    ar_temperature_dry = 0x13
+
     status = 0x14
     mode = 0x15
     lock = 0x18
@@ -118,8 +116,7 @@ class OperateCode(BaseEnum):
 
     ReadFloorHeatingStatus = b'\x19\x44'
     ReadFloorHeatingStatusResponse = b'\x19\x45'
-    ControlFloorHeatingStatus = b'\x19\x46'
-    ControlFloorHeatingStatusResponse = b'\x19\x47'
+    ControlFloorHeatingResponse = b'\x1C\x5D'
 
     ReadDryContactStatus = b'\x15\xCE'
     ReadDryContactStatusResponse = b'\x15\xCF'
@@ -137,7 +134,7 @@ class OperateCode(BaseEnum):
     ReadDLPStatusResponse = b'\xE3\xDB'
     ControlDLPStatus = b'\xE3\xD8'
     ControlDLPStatusResponse = b'\xE3\xD9'
-
+    
     """
     # 
     # 
