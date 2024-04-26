@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from ..telegram import Telegram, ControlAirConditionData, ControlAirConditionResponseData, ReadAirConditionStatusData, ReadAirConditionStatusResponseData
+from ..telegram import Telegram, ControlAirConditionResponseData, ReadAirConditionStatusData, ReadAirConditionStatusResponseData, ControlDLPStatusData, ControlDLPStatusResponseData
 from .device import Device
 from ..helpers import copy_class_attrs
-from ..enums import AirConditionMode, FanMode, OnOffStatus, TemperatureType
+from ..enums import AirConditionMode, FanMode, OnOffStatus, TemperatureType, DLPOperateCode
 
 logger = logging.getLogger(__name__)
 
@@ -33,28 +33,38 @@ class AirCondition(Device):
             if telegram._ac_number == self.ac_number:
                 copy_class_attrs(telegram, self)
                 self.call_device_updated()
+        elif isinstance(telegram, ControlDLPStatusResponseData):
+            if telegram._number == self.ac_number:
+                self._update(telegram._dlp_operate_code, telegram._data)
+                self.call_device_updated()
         else:
             logger.debug(f"Not supported message for operate type {telegram}")
+    
+    def _update(op_code, data):
+        operate = DLPOperateCode.value_of(op_code)
+        if operate == DLPOperateCode.ar_status:
+            self._status = data
+        elif operate == DLPOperateCode.ar_fan_speed:
+            self._fan = data
+        elif operate == DLPOperateCode.ar_mode:
+            self._mode = data
+        elif operate == DLPOperateCode.ar_temperature_auto:
+            self._auto_temperature = data
+        elif operate == DLPOperateCode.ar_temperature_cool:
+            self._cool_temperature = data
+        elif operate == DLPOperateCode.ar_temperature_dry:
+            self._dry_temperature = data
+        elif operate == DLPOperateCode.ar_temperature_heat:
+            self._heat_temperature = data
+        else:
+            logger.debug(f"Not supported DLP operate type {op_code}")
 
-    def _telegram_received_control_status_cb(self, telegram, air_condition_status:ControlAirConditionData):
-        if isinstance(telegram, ReadAirConditionStatusResponseData):
-            if telegram._ac_number == self.ac_number:
-                self.unregister_telegram_received_cb(self._telegram_received_control_status_cb, air_condition_status)
-                
-                logger.debug(f"air_condition_status = {air_condition_status}")
-                logger.debug(f"ReadAirConditionStatusResponseData = {telegram}")
-                control = ControlAirConditionData(self._device_address)
-                copy_class_attrs(telegram, control)
-                copy_class_attrs(air_condition_status, control)
-                logger.debug(f"Trying to control the air condition to {control}")
-                
-                async def _send_control_air_condition_status(buspro, control):
-                    await buspro.send_telegram(control)
-                asyncio.ensure_future(_send_control_air_condition_status(self._buspro, control), loop=self._buspro.loop)
-
-    async def control_status(self, air_condition_status: ControlAirConditionData):
-        self.register_telegram_received_cb(self._telegram_received_control_status_cb, air_condition_status)
-        await self._read_air_condition_status()
+    async def async_control_dlp(self, operate, data):
+        control = ControlDLPStatusData(self._device_address)
+        control._dlp_operate_code = operate.value
+        control._data = data
+        control._number = self.ac_number
+        await self._buspro.send_telegram(control)
 
     def call_read_air_condition_status(self, run_from_init=False):      
         asyncio.ensure_future(self._read_air_condition_status(run_from_init), loop=self._buspro.loop)
@@ -101,39 +111,33 @@ class AirCondition(Device):
             return self._auto_temperature # 从测试看这几个模式下的温度是一样的，所以随便取一个
 
     async def async_turn_on(self):
-        control = ControlAirConditionData(self._device_address)
-        control._status = OnOffStatus.ON.value
-        await self.control_status(control)
+        await self.async_control_dlp(DLPOperateCode.ar_status, OnOffStatus.ON.value)
     
     async def async_turn_off(self):
-        control = ControlAirConditionData(self._device_address)
-        control._status = OnOffStatus.OFF.value
-        await self.control_status(control)
+        await self.async_control_dlp(DLPOperateCode.ar_status, OnOffStatus.OFF.value)
     
     async def async_set_mode(self, mode:AirConditionMode):
         logger.debug(f"Try to set AC mode: {mode}")
-        control = ControlAirConditionData(self._device_address)
-        control._mode = mode.value
-        control._status = OnOffStatus.ON.value
-        await self.control_status(control)
+        if not self.is_on:
+            await self.async_control_dlp(DLPOperateCode.ar_status, OnOffStatus.ON.value)
+        await self.async_control_dlp(DLPOperateCode.ar_mode, mode.value)
     
-    async def async_set_target_temperature(self, temperature):
-        control = ControlAirConditionData(self._device_address)
+    async def async_set_target_temperature(self, temperature):        
         if self.mode == AirConditionMode.Cool:
-            control._cool_temperature = temperature
+            operate = DLPOperateCode.ar_temperature_cool
         elif self.mode == AirConditionMode.Heat:
-            control._heat_temperature = temperature
+            operate = DLPOperateCode.ar_temperature_heat
         elif self.mode == AirConditionMode.Auto:
-            control._auto_temperature = temperature
+            operate = DLPOperateCode.ar_temperature_auto
         elif self.mode == AirConditionMode.Dry:
-            control._dry_temperature = temperature
-        # else: # 还有一个fan模式
-        #     control._auto_temperature = temperature # 随便取一个
-        control._set_temperature = temperature       
-
-        await self.control_status(control)
+            operate = DLPOperateCode.ar_temperature_dry
+        else: # 还有一个fan模式
+            logger.error(f"The air condition mode {self.mode} is not support for set target temperature!")
+            return
+     
+        await self.async_control_dlp(operate, temperature)
     
     async def async_set_fan_mode(self, fan_mode:FanMode):
-        control = ControlAirConditionData(self._device_address)
-        control._fan = fan_mode.value
-        await self.control_status(control)
+        if not self.is_on:
+            await self.async_control_dlp(DLPOperateCode.ar_status, OnOffStatus.ON.value)
+        await self.async_control_dlp(DLPOperateCode.ar_fan_speed, fan_mode.value)
