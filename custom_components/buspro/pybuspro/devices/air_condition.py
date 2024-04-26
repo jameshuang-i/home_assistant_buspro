@@ -40,7 +40,7 @@ class AirCondition(Device):
         else:
             logger.debug(f"Not supported message for operate type {telegram}")
     
-    def _update(op_code, data):
+    def _update(self, op_code, data):
         operate = DLPOperateCode.value_of(op_code)
         if operate == DLPOperateCode.ar_status:
             self._status = data
