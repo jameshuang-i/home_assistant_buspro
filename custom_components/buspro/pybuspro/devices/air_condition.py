@@ -120,6 +120,7 @@ class AirCondition(Device):
         logger.debug(f"Try to set AC mode: {mode}")
         if not self.is_on:
             await self.async_control_dlp(DLPOperateCode.ar_status, OnOffStatus.ON.value)
+            await asyncio.sleep(2)
         await self.async_control_dlp(DLPOperateCode.ar_mode, mode.value)
     
     async def async_set_target_temperature(self, temperature):        
