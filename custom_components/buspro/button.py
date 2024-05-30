@@ -12,8 +12,8 @@ from tinytuya.Contrib.RFRemoteControlDevice import RFRemoteControlDevice
 import voluptuous as vol
 
 from homeassistant.core import HomeAssistant
-import homeassistant.helpers.config_validation as cv
 from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
+from homeassistant.helpers import config_validation as cv, entity_platform, service
 from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import (CONF_NAME, CONF_DEVICES)
@@ -41,22 +41,17 @@ class CommandType(Enum):
     RF = "rf"
     IR = "ir"
 
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up Button entities."""
-    component = hass.data[DOMAIN] = EntityComponent[TuyaRemoter](
-        logger, DOMAIN, hass, SCAN_INTERVAL
+async def async_setup_entry(hass, entry):
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        "press_command",
+        {
+            vol.Required("command_code"): cv.string,
+            vol.Required("command_type"): vol.Coerce(CommandType),
+        },
+        async_send_command,
     )
-    await component.async_setup(config)
-
-    component.async_register_entity_service(
-            "press_command",
-            {
-                vol.Required("command_code"): cv.string,
-                vol.Required("command_type"): vol.Coerce(CommandType),
-            },
-            "async_handle_send_command")
-
-    return True
 
 async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
     devices = []
@@ -100,3 +95,6 @@ class TuyaRemoter(ButtonEntity):
     @property
     def unique_id(self):
         return self._device_id
+
+async def async_send_command(entity, service_call):
+    await entity.async_handle_send_command(service_call.data['command_code'], service_call.data['command_type'])
