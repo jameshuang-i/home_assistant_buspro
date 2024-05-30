@@ -7,13 +7,15 @@ https://home-assistant.io/components/...
 
 import logging
 from datetime import timedelta
-
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
-from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
-from homeassistant.const import (CONF_NAME, CONF_DEVICES)
 from enum import Enum
 from tinytuya.Contrib.RFRemoteControlDevice import RFRemoteControlDevice
+import voluptuous as vol
+
+import homeassistant.helpers.config_validation as cv
+from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
+from homeassistant.helpers.entity_component import EntityComponent
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.const import (CONF_NAME, CONF_DEVICES)
 
 from . import DOMAIN
 
