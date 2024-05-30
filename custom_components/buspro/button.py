@@ -6,14 +6,18 @@ https://home-assistant.io/components/...
 """
 
 import logging
+from datetime import timedelta
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
 from homeassistant.const import (CONF_NAME, CONF_DEVICES)
-from homeassistant.core import callback
 from enum import Enum
 from tinytuya.Contrib.RFRemoteControlDevice import RFRemoteControlDevice
+
+from . import DOMAIN
+
+SCAN_INTERVAL = timedelta(seconds=30)
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +38,28 @@ class CommandType(Enum):
     RF = "rf"
     IR = "ir"
 
-async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
-    devices = []
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up Button entities."""
+    component = hass.data[DOMAIN] = EntityComponent[TuyaRemoter](
+        logger, DOMAIN, hass, SCAN_INTERVAL
+    )
+    await component.async_setup(config)
 
-    for device_config in config.get(CONF_DEVICES, []):
-        device = BusproSwitch(hass, device_config)
-        device.async_register_entity_service(
+    component.async_register_entity_service(
             "Send_Command",
             {
                 vol.Required("code"): cv.string,
                 vol.Required("command_type"): vol.Coerce(CommandType),
             },
             "async_handle_send_command")
+
+    return True
+
+async def async_setup_platform(hass, config, async_add_entites, discovery_info=None):
+    devices = []
+
+    for device_config in config.get(CONF_DEVICES, []):
+        device = TuyaRemoter(hass, device_config)
         devices.append(device)
 
     async_add_entites(devices)
@@ -57,16 +71,6 @@ class TuyaRemoter(ButtonEntity):
         self._device_id = config["id"]
 
         self._device = RFRemoteControlDevice(config["id"], address=config["ip"], local_key=config["local_key"], control_type=config["control_type"], persist=config["persist"])
-
-        self.async_register_callbacks()
-
-    @callback
-    def async_register_callbacks(self):
-
-        async def after_update_callback(device):
-            await self.async_update_ha_state()
-
-        self._device.register_device_updated_cb(after_update_callback)
 
     @property
     def name(self):
