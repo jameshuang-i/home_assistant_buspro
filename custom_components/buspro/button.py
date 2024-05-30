@@ -11,6 +11,7 @@ from enum import Enum
 from tinytuya.Contrib.RFRemoteControlDevice import RFRemoteControlDevice
 import voluptuous as vol
 
+from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.button import ButtonEntity, PLATFORM_SCHEMA
 from homeassistant.helpers.entity_component import EntityComponent
@@ -48,9 +49,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await component.async_setup(config)
 
     component.async_register_entity_service(
-            "Send_Command",
+            "press_command",
             {
-                vol.Required("code"): cv.string,
+                vol.Required("command_code"): cv.string,
                 vol.Required("command_type"): vol.Coerce(CommandType),
             },
             "async_handle_send_command")
@@ -88,11 +89,11 @@ class TuyaRemoter(ButtonEntity):
     def send_ir_command(code):
         self._device.send_button(code)
 
-    async def async_handle_send_command(self, code:str, command_type:str):
+    async def async_handle_send_command(self, command_code:str, command_type:str):
         if command_type==CommandType.RF.value:
-            await self._hass.async_add_executor_job(self.send_rf_command(code))
+            await self._hass.async_add_executor_job(self.send_rf_command(command_code))
         elif command_type==CommandType.IR.value:
-            await self._hass.async_add_executor_job(self.send_ir_command(code))
+            await self._hass.async_add_executor_job(self.send_ir_command(command_code))
         else:
             logger.error(f"TuyaRemoter Not support the command type {command_type}")
 

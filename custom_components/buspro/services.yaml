@@ -1,1 +1,17 @@
-
+press_button:
+  target:
+    entity:
+      domain: buspro
+  fields:
+    command_type:
+      required: true
+      example: "rf"
+      selector:
+        select:
+          options:
+            - "rf"
+            - "ir"
+    command_code:
+      required: true
+      selector:
+        text:
