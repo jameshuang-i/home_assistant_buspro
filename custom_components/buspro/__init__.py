@@ -14,7 +14,6 @@ from homeassistant.const import (CONF_HOST, CONF_PORT, CONF_NAME,)
 from homeassistant.const import (EVENT_HOMEASSISTANT_STOP,)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from tinytuya.Contrib.RFRemoteControlDevice import RFRemoteControlDevice
 
 from .pybuspro.buspro import Buspro
 from .pybuspro.devices.scene import Scene
@@ -67,10 +66,7 @@ CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_PORT): cv.port,
-        vol.Optional(CONF_NAME, default=DEFAULT_CONF_NAME): cv.string,
-        vol.Optional("TUYA_DEVICE_ID", default=""): cv.string,
-        vol.Optional("TUYA_DEVICE_IP", default=""): cv.string,
-        vol.Optional("TUYA_LOCAL_KEY", default=""): cv.string
+        vol.Optional(CONF_NAME, default=DEFAULT_CONF_NAME): cv.string
     })
 }, extra=vol.ALLOW_EXTRA)
 
@@ -87,7 +83,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     return await _init_buspro(hass, config_entry.data)
 
 async def _init_buspro(hass:HomeAssistant, config: dict) -> bool:
-    buspro_module = BusproModule(hass, config[CONF_HOST], config[CONF_PORT], config["TUYA_DEVICE_ID"], config["TUYA_DEVICE_IP"], config["TUYA_DEVICE_IP"])
+    buspro_module = BusproModule(hass, config[CONF_HOST], config[CONF_PORT])
     hass.data[DATA_BUSPRO] = buspro_module
     _LOGGER.info("Inited the buspro module and try to start service ...")
     await buspro_module.start()
@@ -99,17 +95,11 @@ async def _init_buspro(hass:HomeAssistant, config: dict) -> bool:
 class BusproModule:
     """Representation of Buspro Object."""
 
-    def __init__(self, hass:HomeAssistant, host:str, port:int, tuya_device_id:str, tuya_device_ip:str, tuya_local_key:str):
+    def __init__(self, hass:HomeAssistant, host:str, port:int):
         """Initialize of Buspro module."""
         self.hass:HomeAssistant = hass
         self.gateway_address:typing.Tuple[str,int] = (host, port)
         self.local_address:typing.Tuple[str,int] = ('', port)
-
-        #tuya
-        self.tuya_device_id = tuya_device_id
-        self.tuya_device_ip = tuya_device_ip
-        self.tuya_local_key = tuya_local_key
-        self.tuya_device = None
 
         self.connected:bool = False
         # Initialize of Buspro object.
@@ -120,9 +110,6 @@ class BusproModule:
         await self.hdl.start(state_updater=False)
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.stop)
         self.connected = True
-
-        if self.tuya_device_id and self.tuya_device_ip and self.tuya_local_key:
-            self.tuya_device = RFRemoteControlDevice(self.tuya_device_id, address=self.tuya_device_ip, local_key=self.tuya_local_key, control_type=1, persist=True)
 
     async def stop(self, event):
         """Stop Buspro object. Disconnect from tunneling device."""
@@ -155,14 +142,6 @@ class BusproModule:
             await universal_switch.set_on()
         else:
             await universal_switch.set_off()
-        
-    async def service_send_tuya_command(self, call):
-        _LOGGER.debug(f"send tuya RF device service called with data {call.data}")
-        if self.tuya_device:
-            code = call.data.get(BASE64_CODE)
-            self.tuya_device.rf_send_button(code)
-        else:
-            _LOGGER.error("The tuya device is None, can not to send device")
 
     def register_services(self):
         """ activate_scene """
@@ -182,9 +161,3 @@ class BusproModule:
             DOMAIN, SERVICE_BUSPRO_UNIVERSAL_SWITCH,
             self.service_set_universal_switch,
             schema=SERVICE_BUSPRO_UNIVERSAL_SWITCH_SCHEMA)
-
-        """ tuya RF device """
-        self.hass.services.async_register(
-            DOMAIN, "Send RF Button",
-            self.service_send_tuya_command,
-            schema=SERVICE_TUYA_REMOTE_SEND_COMMAND_SCHEMA)
