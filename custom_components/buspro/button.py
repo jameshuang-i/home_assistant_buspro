@@ -43,7 +43,7 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
             "Send_Command",
             {
                 vol.Required("code"): cv.string,
-                vol.Required("type"): vol.Coerce(CommandType),
+                vol.Required("command_type"): vol.Coerce(CommandType),
             },
             "async_handle_send_command")
         devices.append(device)
@@ -82,13 +82,13 @@ class TuyaRemoter(ButtonEntity):
     def send_ir_command(code):
         self._device.send_button(code)
 
-    async def async_handle_send_command(self, code:str, type:str):
-        if type=="rf":
+    async def async_handle_send_command(self, code:str, command_type:str):
+        if command_type==CommandType.RF.value:
             await self._hass.async_add_executor_job(self.send_rf_command(code))
-        elif type=="ir":
+        elif command_type==CommandType.IR.value:
             await self._hass.async_add_executor_job(self.send_ir_command(code))
         else:
-            logger.error(f"TuyaRemoter Not support the command type {type}")
+            logger.error(f"TuyaRemoter Not support the command type {command_type}")
 
     @property
     def unique_id(self):
