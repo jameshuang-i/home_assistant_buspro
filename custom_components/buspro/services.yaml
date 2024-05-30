@@ -6,6 +6,7 @@ press_button:
     command_type:
       required: true
       example: "rf"
+      default: "rf"
       selector:
         select:
           options:

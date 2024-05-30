@@ -41,10 +41,10 @@ class CommandType(Enum):
     RF = "rf"
     IR = "ir"
 
-async def async_setup_entry(hass, entry):
+async def async_register_services():
     platform = entity_platform.async_get_current_platform()
 
-    platform.async_register_entity_service(
+    await platform.async_register_entity_service(
         "press_command",
         {
             vol.Required("command_code"): cv.string,
@@ -60,7 +60,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         device = TuyaRemoter(hass, device_config)
         devices.append(device)
 
-    async_add_entites(devices)
+    await async_add_entites(devices)
+    await async_register_services(hass, coordinator)
 
 class TuyaRemoter(ButtonEntity):
     def __init__(self, hass, config):        
@@ -77,6 +78,9 @@ class TuyaRemoter(ButtonEntity):
     @property
     def available(self):
         return True
+    
+    def press(self):
+        pass
     
     def send_rf_command(code):
         self._device.rf_send_button(code)

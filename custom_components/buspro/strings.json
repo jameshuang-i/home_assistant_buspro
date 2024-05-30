@@ -13,5 +13,11 @@
     "error": {
       "unknown": "An error occured."
     }
+  },
+  "services": {
+    "press_button": {
+      "name": "Press Button",
+      "description": "Press the button entity."
+    }
   }
 }
