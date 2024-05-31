@@ -91,9 +91,9 @@ class TuyaRemoter(ButtonEntity):
 
     async def async_handle_send_command(self, command_code:str, command_type:CommandType):
         if command_type==CommandType.RF:            
-            await asyncio.ensure_future(self.send_rf_command(command_code), loop=asyncio.get_event_loop())
+            await asyncio.run(self.send_rf_command(command_code))
         elif command_type==CommandType.IR:
-            await asyncio.ensure_future(self.send_ir_command(command_code), loop=asyncio.get_event_loop())
+            await asyncio.run(self.send_ir_command(command_code))
         else:
             logger.error(f"TuyaRemoter Not support the command type {command_type}")
 
