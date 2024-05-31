@@ -15,9 +15,9 @@
     }
   },
   "services": {
-    "press_button": {
-      "name": "Press Button",
-      "description": "Press the button entity."
+    "send_command": {
+      "name": "Send Command",
+      "description": "Send RF or IR remote control command."
     }
   }
 }

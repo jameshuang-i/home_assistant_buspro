@@ -6,6 +6,7 @@ https://home-assistant.io/components/...
 """
 
 import logging
+import asyncio
 from datetime import timedelta
 from enum import Enum
 from tinytuya.Contrib.RFRemoteControlDevice import RFRemoteControlDevice
@@ -41,11 +42,11 @@ class CommandType(Enum):
     RF = "rf"
     IR = "ir"
 
-async def async_register_services():
+def async_register_services():
     platform = entity_platform.async_get_current_platform()
 
-    await platform.async_register_entity_service(
-        "press_command",
+    platform.async_register_entity_service(
+        "send_command",
         {
             vol.Required("command_code"): cv.string,
             vol.Required("command_type"): vol.Coerce(CommandType),
@@ -60,8 +61,8 @@ async def async_setup_platform(hass, config, async_add_entites, discovery_info=N
         device = TuyaRemoter(hass, device_config)
         devices.append(device)
 
-    await async_add_entites(devices)
-    await async_register_services(hass, coordinator)
+    async_add_entites(devices)
+    async_register_services()
 
 class TuyaRemoter(ButtonEntity):
     def __init__(self, hass, config):        
@@ -82,17 +83,17 @@ class TuyaRemoter(ButtonEntity):
     def press(self):
         pass
     
-    def send_rf_command(code):
+    def send_rf_command(self, code):
         self._device.rf_send_button(code)
     
-    def send_ir_command(code):
+    def send_ir_command(self, code):
         self._device.send_button(code)
 
-    async def async_handle_send_command(self, command_code:str, command_type:str):
-        if command_type==CommandType.RF.value:
-            await self._hass.async_add_executor_job(self.send_rf_command(command_code))
-        elif command_type==CommandType.IR.value:
-            await self._hass.async_add_executor_job(self.send_ir_command(command_code))
+    async def async_handle_send_command(self, command_code:str, command_type:CommandType):
+        if command_type==CommandType.RF:            
+            await asyncio.ensure_future(self.send_rf_command(command_code), loop=syncio.get_event_loop())
+        elif command_type==CommandType.IR:
+            await asyncio.ensure_future(self.send_ir_command(command_code), loop=syncio.get_event_loop())
         else:
             logger.error(f"TuyaRemoter Not support the command type {command_type}")
 

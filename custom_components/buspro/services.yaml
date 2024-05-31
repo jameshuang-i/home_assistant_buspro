@@ -1,7 +1,7 @@
-press_button:
+send_command:
   target:
     entity:
-      domain: buspro
+      domain: button
   fields:
     command_type:
       required: true
