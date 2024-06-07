@@ -54,7 +54,7 @@ class NetworkInterface:
     
     def _build_telegram_data(self, data, address=None):
         if not data or len(data) <= 27:
-            logger.debug("The received data is none or less then 27, abort!")
+            # logger.debug("The received data is none or less then 27, abort!")
             return None
 
         def _print_bytes(datas):
@@ -62,10 +62,9 @@ class NetworkInterface:
 
         try:
             # index = 14 # 从16开始算
-            logger.debug(f"RECEIVED DATA: {_print_bytes(data[14:])}")
             # 验证消息头
             if data[14: 16 ] != b'\xAA\xAA':
-                logger.debug("The telegarm check failed!")
+                # logger.debug("The telegarm check failed!")
                 return None
             # index += 2 # 16
             length_package = data[16]
@@ -80,6 +79,8 @@ class NetworkInterface:
             if crc_computed != crc:
                 logger.debug('CRC check failed!')
                 return None
+                
+            logger.debug(f"RECEIVED DATA: {_print_bytes(data[14:])}")
 
             # 获取各字段
             # index += 1 # 17

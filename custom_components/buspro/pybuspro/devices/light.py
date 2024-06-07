@@ -24,21 +24,23 @@ class Light(Device):
         self.call_read_current_status_of_channels(run_from_init=True)
 
     def _telegram_received_cb(self, telegram:Telegram, postfix=None):
-        logger.debug(f"Light Device received: {telegram}")
         if isinstance(telegram, SingleChannelControlResponseData):
-            if self._channel == telegram._channel_number and telegram._success == SuccessOrFailure.Success.value:
+            if self._channel == telegram._channel_number:  # and telegram._success == SuccessOrFailure.Success.value:
+                logger.debug(f"Light Device received: {telegram}")
                 self._brightness = telegram._channel_status
                 self._set_previous_brightness(self._brightness)
                 self.call_device_updated()
         elif isinstance(telegram, ReadStatusOfChannelsResponseData):
             if self._channel <= telegram._channel_count:
+                logger.debug(f"Light Device received: {telegram}")
                 self._brightness = telegram.get_status(self._channel)
                 self._set_previous_brightness(self._brightness)
                 self.call_device_updated()
         elif isinstance(telegram, SceneControlResponseData):
+            logger.debug(f"Light Device received: {telegram}")
             self.call_read_current_status_of_channels()
-        else:
-            logger.debug(f"Light device discard the telegram: {telegram}")
+        # else:
+        #     logger.debug(f"Light device discard the telegram: {telegram}")
     
     def call_read_current_status_of_channels(self, run_from_init=False):     
         asyncio.ensure_future(self._read_current_state_of_channels(run_from_init), loop=self._buspro.loop)

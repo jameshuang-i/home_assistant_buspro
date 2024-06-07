@@ -20,6 +20,7 @@ class UniversalSwitch(Device):
     def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telegram, (UniversalSwitchControlResponseData, ReadStatusOfUniversalSwitchResponseData)):
             if self._switch_number == telegram._switch_number:
+                logger.debug(f"Universal Switch Device received: {telegram}")
                 self._switch_status = OnOff.value_of(telegram._switch_status)
                 self.call_device_updated()
 

@@ -27,18 +27,21 @@ class AirCondition(Device):
     def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telegram, ReadAirConditionStatusResponseData):
             if telegram._ac_number == self.ac_number:
+                logger.debug(f"Air Condition Device received: {telegram}")
                 copy_class_attrs(telegram, self)
                 self.call_device_updated()
         elif isinstance(telegram, ControlAirConditionResponseData):
             if telegram._ac_number == self.ac_number:
+                logger.debug(f"Air Condition Device received: {telegram}")
                 copy_class_attrs(telegram, self)
                 self.call_device_updated()
         elif isinstance(telegram, ControlDLPStatusResponseData):
             if telegram._number == self.ac_number:
+                logger.debug(f"Air Condition Device received: {telegram}")
                 self._update(telegram._dlp_operate_code, telegram._data)
                 self.call_device_updated()
-        else:
-            logger.debug(f"Not supported message for operate type {telegram}")
+        # else:
+        #     logger.debug(f"Not supported message for operate type {telegram}")
     
     def _update(self, op_code, data):
         operate = DLPOperateCode.value_of(op_code)

@@ -24,13 +24,15 @@ class FloorHeating(Device):
 
     def _telegram_received_cb(self, telegram, postfix=None):
         if isinstance(telegram, (ReadDLPStatusResponseData, ControlDLPStatusResponseData)):
+            logger.debug(f"Floor Heating Device received: {telegram}")
             self._update(telegram._dlp_operate_code, telegram._data, telegram._number)
             self.call_device_updated()
         elif isinstance(telegram, ControlFloorHeatingResponseData):
             if telegram._number == self._number:
+                logger.debug(f"Floor Heating Device received: {telegram}")
                 copy_class_attrs(telegram, self)
-        else:
-            logger.debug(f"Not supported message for operate type {telegram}")
+        # else:
+        #     logger.debug(f"Not supported message for operate type {telegram}")
 
     def _update(self, op_code, data, number):
         if number == self._number:
