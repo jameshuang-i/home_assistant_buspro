@@ -79,7 +79,7 @@ class NetworkInterface:
             if crc_computed != crc:
                 logger.debug('CRC check failed!')
                 return None
-                
+
             logger.debug(f"RECEIVED DATA: {_print_bytes(data[14:])}")
 
             # 获取各字段
@@ -101,6 +101,7 @@ class NetworkInterface:
             telegram.crc = crc
             # telegram.udp_address = address
             
+            logger.debug(f"RECEIVED DATA: Source={telegram.source_address}, Target={telegram.target_address}, Operate={telegram.operate_code}, type={telegram.operate_code}, play={telegram.payload}")
             return telegram
             
         except Exception as e:

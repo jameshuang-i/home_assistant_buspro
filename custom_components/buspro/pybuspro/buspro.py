@@ -86,8 +86,9 @@ class Buspro:
 
             # Sender callback kun for oppgitt kanal
             # if device_address == telegram_control.target_address or device_address == telegram_control.source_address:
-            if telegram_control.target_address == device_address or telegram_control.target_address == b'\xFF\xFF':
+            if telegram_control.target_address == (255, 255) or telegram_control.target_address == device_address:                
                 if telegram_control.operate_code is not OperateCode.TIME_IF_FROM_LOGIC_OR_SECURITY:
+                    logger.debug(f"Send to device {device_address}")
                     postfix = telegram_received_cb['postfix']
                     telegram_received_cb['callback'](telegram_control, postfix)
 
