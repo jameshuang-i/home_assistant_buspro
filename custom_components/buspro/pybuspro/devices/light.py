@@ -3,6 +3,7 @@
 import asyncio
 from ..telegram import Telegram, SingleChannelControlData, SingleChannelControlResponseData, ReadStatusOfChannelsData, ReadStatusOfChannelsResponseData, SceneControlResponseData
 from .device import Device
+from ..enums import SuccessOrFailure
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class Light(Device):
     def _telegram_received_cb(self, telegram:Telegram, postfix=None):
         logger.debug(f"Light Device received: {telegram}")
         if isinstance(telegram, SingleChannelControlResponseData):
-            if self._channel == telegram._channel_number: # and telegram._success
+            if self._channel == telegram._channel_number and telegram._success == SuccessOrFailure.Success.value:
                 self._brightness = telegram._channel_status
                 self._set_previous_brightness(self._brightness)
                 self.call_device_updated()
