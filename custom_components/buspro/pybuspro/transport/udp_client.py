@@ -35,15 +35,16 @@ class UDPClient:
             protol = UDPProtocol(self._data_received_callback)
             # Create multicast socket
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.setblocking(False)
-            sock.bind(self._local_address)
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
-
             if sock is None:
                 logger.error("Create multicast socket failed!")
                 return 
-            
+
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)            
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
+            sock.setblocking(False)
+            sock.bind(self._local_address)
+
             (transport, _) = await self._loop.create_datagram_endpoint(lambda: protol, sock=sock)
 
             self._transport = transport

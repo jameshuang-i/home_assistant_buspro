@@ -6,7 +6,7 @@ from .enums import DeviceType, OperateCode, BaseEnum
 # DTO class
 class Telegram:
     def __init__(self, device_address:(int,int)=None):
-        self.source_address = None
+        self.source_address = (253, 254)
         self.source_device_type = DeviceType.PyBusPro
         self.operate_code:OperateCode = None
         self.target_address = device_address

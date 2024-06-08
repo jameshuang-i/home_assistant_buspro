@@ -42,8 +42,10 @@ class NetworkInterface:
             self._client = None
 
     async def send_telegram(self, telegram):
+
         def _print_message(m):
             return ' '.join([format(x, '02x') for x in m])
+
         logger.debug(f"Send Telegram: {telegram}")
         message = self._build_send_buffer(telegram)
         logger.debug(f"Send Message: {_print_message(message)}")
@@ -53,12 +55,14 @@ class NetworkInterface:
             logger.error("Send telegram failed as message build failed or client not started!")
     
     def _build_telegram_data(self, data, address=None):
-        if not data or len(data) <= 27:
-            # logger.debug("The received data is none or less then 27, abort!")
-            return None
 
         def _print_bytes(datas):
             return ' '.join([format(x, '02x') for x in datas])
+
+        logger.debug(f"RECEIVED DATA: {_print_bytes(data)}")
+        if not data or len(data) <= 27:
+            # logger.debug("The received data is none or less then 27, abort!")
+            return None
 
         try:
             # index = 14 # 从16开始算
@@ -80,32 +84,22 @@ class NetworkInterface:
                 logger.debug('CRC check failed!')
                 return None
 
-            logger.debug(f"RECEIVED DATA: {_print_bytes(data[14:])}")
-
             # 获取各字段
             # index += 1 # 17
-            telegram = Telegram() 
-            # logger.debug(f"source_address: {_print_bytes(data[17:19])}")           
-            telegram.source_address = (data[17], data[18])
-            # index += 2 # 19
-            # logger.debug(f"source_type: {_print_bytes(data[19: 21])}")  
+            telegram = Telegram()      
+            telegram.source_address = (data[17], data[18]) 
             telegram.source_device_type = DeviceType.value_of(data[19: 21])
-            # index += 2 # 21
-            # logger.debug(f"OperateCode: {_print_bytes(data[21: 23])}")  
             telegram.operate_code = OperateCode.value_of(data[21: 23])
-            # index += 2 # 23
-            # logger.debug(f"target_address: {_print_bytes(data[23: 25])}")  
             telegram.target_address = (data[23], data[24])
-            # index += 2 # 25
             telegram.payload = list(data[25:-2])
             telegram.crc = crc
             # telegram.udp_address = address
             
-            logger.debug(f"RECEIVED DATA: Source={telegram.source_address}, Target={telegram.target_address}, Operate={telegram.operate_code}, type={telegram.operate_code}, play={telegram.payload}")
+            logger.debug(f"RECEIVED TELEGRAM: Source={telegram.source_address}, Target={telegram.target_address}, Operate={telegram.operate_code}, type={telegram.source_device_type}")
             return telegram
             
         except Exception as e:
-            logger.error("error building telegram: {}".format(traceback.format_exc()))
+            logger.error("Error building telegram: {}".format(traceback.format_exc()))
             return None
     
     def _build_send_buffer(self, telegram: Telegram):
