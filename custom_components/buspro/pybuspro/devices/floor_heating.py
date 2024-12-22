@@ -31,6 +31,7 @@ class FloorHeating(Device):
             if telegram._number == self._number:
                 logger.debug(f"Floor Heating Device received: {telegram}")
                 copy_class_attrs(telegram, self)
+                self.call_device_updated()
         # ReadFloorHeatingStatusResponse 没有_number字段
         # elif isinstance(telegram, ReadFloorHeatingStatusResponseData):
         #     if telegram._number == self._number:

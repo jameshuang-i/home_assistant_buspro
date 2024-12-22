@@ -240,7 +240,7 @@ class ReadFloorHeatingStatusResponseData(Telegram):
         super().__init__(device_address)
         self.operate_code = OperateCode.ReadFloorHeatingStatusResponse
         self._temperature_type = None # 0 = C, 1 = F
-        self._current_temperature = None
+        self._temperature = None
         self._status = None # 0 = OFF, 1 = ON
         self._mode = None # 1 = Normal, 2 = Day , 3 = Night, 4 = Away, 5 = Timer
         self._normal_temperature = None
@@ -255,7 +255,7 @@ class ControlFloorHeatingResponseData(Telegram):
         self._status = None
         self._bit_3 = None
         self._mode = None
-        self.temperature_normal = None
+        self._temperature_normal = None
         self._temperature_day = None
         self._temperature_night = None
         self._temperature_away = None
