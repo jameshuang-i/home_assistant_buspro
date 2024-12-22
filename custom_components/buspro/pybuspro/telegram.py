@@ -253,12 +253,14 @@ class ControlFloorHeatingResponseData(Telegram):
         self.operate_code = OperateCode.ControlFloorHeatingResponse
         self._number = None
         self._status = None
-        self._temperature = None
+        self._bit_3 = None
         self._mode = None
         self.temperature_normal = None
         self._temperature_day = None
         self._temperature_night = None
         self._temperature_away = None
+        self._bit_9 = None
+        self._temperature = None
 
 class ReadAirConditionStatusData(Telegram):
     def __init__(self, device_address):

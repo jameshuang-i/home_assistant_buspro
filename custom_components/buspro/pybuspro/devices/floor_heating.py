@@ -31,6 +31,11 @@ class FloorHeating(Device):
             if telegram._number == self._number:
                 logger.debug(f"Floor Heating Device received: {telegram}")
                 copy_class_attrs(telegram, self)
+        # ReadFloorHeatingStatusResponse 没有_number字段
+        # elif isinstance(telegram, ReadFloorHeatingStatusResponseData):
+        #     if telegram._number == self._number:
+        #         logger.debug(f"Floor Heating Device received: {telegram}")
+        #         copy_class_attrs(telegram, self)
         # else:
         #     logger.debug(f"Not supported message for operate type {telegram}")
 
